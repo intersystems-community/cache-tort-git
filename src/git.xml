@@ -1,0 +1,1613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="%SourceControl.Git">
+<Import>%SourceControl.Git</Import>
+<Super>%Studio.Extension.Base</Super>
+<TimeCreated>62655,58027.787011</TimeCreated>
+
+<XData name="Menu">
+<Data><![CDATA[
+<MenuBase>
+<Menu Name="%SourceMenu" Type="0">
+<MenuItem Name="%Settings" />
+<MenuItem Name="%CreateRepo" Save = "001"/>
+<MenuItem Name="%Clone" Save = "001"/>
+<MenuItem Name="%Commit" Save = "001"/>
+<MenuItem Separator="true"/>
+<MenuItem Name="%Pull" Save = "001"/>
+<MenuItem Name="%Fetch" Save = "001"/>
+<MenuItem Name="%Push" Save = "001"/>
+<MenuItem Separator="true"/>
+<MenuItem Name="%Diff" Save = "001"/>
+<MenuItem Name="%RepoStatus" Save = "001"/>
+<MenuItem Name="%Resolve" Save = "001"/>
+<MenuItem Name="%Revert" Save = "001"/>
+<MenuItem Name="%Log" Save = "001"/>
+<MenuItem Separator="true"/>
+<MenuItem Name="%Export" Save = "001" />
+<MenuItem Name="%Import" Save = "001" />
+</Menu>
+<Menu Name="%SourceMenuContext" Type="1">
+<MenuItem Name="%AddToSC"/>
+<MenuItem Name="%RemoveFromSC"/>
+<MenuItem Name="%Diff" Save = "001"/>
+<MenuItem Name="%Blame" Save = "001"/>
+</Menu>
+</MenuBase>
+]]></Data>
+</XData>
+
+<Method name="UserAction">
+<FormalSpec><![CDATA[Type:%Integer,Name:%String,InternalName:%String,SelectedText:%String,&Action:%String,&Target:%String,&Msg:%String,&Reload:%Boolean]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim ec As %Status = $$$OK
+	#dim menu As %Status = $Piece(Name, ",", 1)
+	if menu '= "%SourceMenu", menu'="%SourceMenuContext" {
+		q $$$OK
+	}
+	s ec = ##class(Utils).UserAction(InternalName, Name, .Target, .Action, .Reload)
+	q ec
+]]></Implementation>
+</Method>
+
+<Method name="OnSourceMenuItem">
+<FormalSpec><![CDATA[name:%String,&Enabled:%String,&DisplayName:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if name = "%Settings" {
+		// We always show Settings
+			s DisplayName = "Настройки"
+			q $$$OK
+	} 
+	
+	if ##class(Utils).NeedSettings() {
+		s Enabled = -1
+		q $$$OK
+	}
+	
+	if ##class(Utils).IsNamespaceInGit() {
+		if name = "%Export" {
+			s DisplayName = "Export All"
+		} elseif name = "%Import" {
+			s DisplayName = "Import All"
+		} elseif name = "%RepoStatus" {
+			s DisplayName = "Check for modifications"
+		}elseif ($LF(##class(Utils).MenuItemList(), name) > 0) {
+			s DisplayName = $E(name, 2, *)
+		} 
+		else {
+			s Enabled = -1
+		}
+	} else { 
+		if name = "%CreateRepo" {
+			s DisplayName = "Create Repo"
+		} elseif name = "%Clone" {
+			s DisplayName = "Clone"
+		} else {
+			s Enabled = -1
+		}
+	}
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnSourceMenuContextItem">
+<FormalSpec><![CDATA[itemName:%String,menuItemName:%String,&Enabled:%String,&DisplayName:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s:menuItemName="%AddToSC" DisplayName = "Add to SourceControl"
+	s:menuItemName="%RemoveFromSC" DisplayName = "Remove from SourceControl"
+	
+	if (itemName = "") || '##class(Utils).IsNamespaceInGit() {
+		s Enabled = -1
+	}elseif ##class(Utils).IsInSourceControl(itemName) {
+		s Enabled = $case(menuItemName, "%AddToSC":-1,:1)
+	} else {
+		s Enabled = $case(menuItemName, "%AddToSC":1,:-1)
+	}
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnMenuItem">
+<Description><![CDATA[
+This is called for every menu item returned to Studio to allow the menu to be enabled/disabled without
+having to write a custom query for <query>MenuItems</query>. The <var>DisplayName</var> of this menu is
+also passed by reference and this may be modified to change the appearance of this menu item. The <var>MenuName</var>
+is the main menu name then the submenu name separated by a ','. If <var>Enabled</var> is set to -1 then it will remove
+this menu item from the list totally, 0 will gray the menu item out and the default 1 will display the menu item as normal.]]></Description>
+<FormalSpec><![CDATA[MenuName:%String,InternalName:%String,SelectedText:%String,&Enabled:%Boolean,&DisplayName:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim menu As %String= $piece(MenuName,",")
+	#dim name As %String = $piece(MenuName,",",2)
+	if menu = "%SourceMenuContext", name = "" {
+		s DisplayName = "Git"
+	}
+	#dim ec As %Status = $$$OK
+
+	if menu = "%SourceMenu" {
+		s ec = ..OnSourceMenuItem(name, .Enabled, .DisplayName)
+	}elseif menu = "%SourceMenuContext" {
+		s ec = ..OnSourceMenuContextItem(InternalName, name, .Enabled, .DisplayName)
+	}
+	Quit ec
+]]></Implementation>
+</Method>
+
+<Method name="OnBeforeLoad">
+<Description>
+This is called before the actual load of data to give the chance
+to load the item from an external format.</Description>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if ##class(Utils).IsInSourceControl(InternalName) {
+		q ##class(Utils).LoadIfOutdated(InternalName)
+	}
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnAfterSave">
+<Description>
+This is called after the item has been saved to the database.
+It may be passed a reference to the object representing the item
+just saved. It can be use to export this documement to an external form for example.</Description>
+<FormalSpec>InternalName:%String,Object:%RegisteredObject=$$$NULLOREF</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if ##class(Utils).IsNamespaceInGit() && ..IsInSourceControl(InternalName) {
+		$$$QuitOnError(##class(Utils).UpdateRoutineTSH(InternalName, ""))
+		q ##class(Utils).ExportItem(InternalName)
+	} else {
+		q $$$OK
+	}
+]]></Implementation>
+</Method>
+
+<Method name="IsInSourceControl">
+<Description>
+Returns true if this item is in source control and false otherwise.</Description>
+<CodeMode>expression</CodeMode>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[InternalName'="" && ##class(Utils).IsInSourceControl(InternalName)
+]]></Implementation>
+</Method>
+
+<Method name="OnAfterDelete">
+<Description>
+Called after an item is deleted.</Description>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if ##class(Utils).IsInSourceControl(InternalName) {
+		q ##class(Utils).DeleteExternalFile(InternalName)
+	}
+	q $$$OK
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="%SourceControl.Git.Utils">
+<Abstract>1</Abstract>
+<IncludeCode>%occStatus</IncludeCode>
+<ProcedureBlock>1</ProcedureBlock>
+<TimeCreated>62657,53384.637236</TimeCreated>
+
+<Parameter name="Storage">
+<Default>^Git</Default>
+</Parameter>
+
+<Parameter name="InstallNamespace">
+<Default>%SYS</Default>
+</Parameter>
+
+<Parameter name="SCListFilename">
+<Default>sc-list.txt</Default>
+</Parameter>
+
+<Method name="DefaultTemp">
+<Description>
+Parameter Timeout = 30;</Description>
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[$G(@($Replace(..#Storage,"^","^["""_..#InstallNamespace_"""]"))@("%defaultTemp"))
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// 8012 because this error has corresponding error message
+
+]]></Content>
+</UDLText>
+
+<Method name="MakeError">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>msg:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[$$$ERROR(8012,"Git",msg)
+]]></Implementation>
+</Method>
+
+<Method name="TempFolder">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[..DefaultTemp()_$TR($znspace,"%")_"\"
+]]></Implementation>
+</Method>
+
+<Method name="GitBinPath">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[$G(@($Replace(..#Storage,"^","^["""_..#InstallNamespace_"""]"))@("%gitBinPath"))
+]]></Implementation>
+</Method>
+
+<Method name="NeedSettings">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[(..DefaultTemp() = "") ||  (..GitBinPath() = "")
+]]></Implementation>
+</Method>
+
+<Method name="InstallNamespace">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[..#InstallNamespace
+]]></Implementation>
+</Method>
+
+<Method name="UpdateSettings">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&settings]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim slash As %String = "\"
+	
+	// we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
+	s @..#Storage@("%gitBinPath") = settings("gitBinPath")
+	
+	// let's add slash in the end
+	if settings("defaultTemp")'="" && ($E(settings("defaultTemp"),*)'=slash) {
+		s settings("defaultTemp") = settings("defaultTemp")_slash
+	}
+	s @..#Storage@("%defaultTemp") = settings("defaultTemp")
+]]></Implementation>
+</Method>
+
+<Method name="GitCommand">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>commandName:%String,itemName:%String=""</FormalSpec>
+<Implementation><![CDATA[
+..GitBinPath()_" /command:"_commandName_
+               " /path:"_..TempFolder()_
+               $case(itemName,"":"",:..ExternalName(itemName))
+]]></Implementation>
+</Method>
+
+<Method name="MenuItemList">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%List</ReturnType>
+<Implementation><![CDATA[
+$LB("%Commit", "%Pull", "%Fetch", "%Push", "%Diff", 
+    "%RepoStatus", "%Resolve", "%Revert", "%Log")
+]]></Implementation>
+</Method>
+
+<Method name="MenuContextItemList">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%List</ReturnType>
+<Implementation><![CDATA[$LB("%Diff","%Blame")
+]]></Implementation>
+</Method>
+
+<Method name="UserAction">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[InternalName:%String,MenuName:%String,&Target:%String,&Action:%String,&Reload:%Boolean]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim folder As %String = ..TempFolder()
+	#dim menuName As %String = $piece(MenuName,",")
+	#dim menuItemName As %String = $piece(MenuName,",",2)
+	#dim ec As %Status = $$$OK
+	
+	if (menuName = "%SourceMenu") {
+		if (menuItemName = "%Settings") {
+			s Action = 2
+			#dim defNamespace As %String = ..#InstallNamespace
+			s Target = $system.CSP.GetDefaultApp(defNamespace)_"/gitprojectsettings.csp?NSpace="_$znspace_"&Username="_$username
+		}elseif (menuItemName = "%CreateRepo") {
+			if ##class(%File).CreateDirectoryChain(..TempFolder()) {
+				// cleanup items info
+				k @..#Storage
+				s Action = 3
+				s Target = ..GitCommand("repocreate")
+			} else {
+				s ec = ..MakeError("Не удалось создать папку "_..TempFolder())
+			}
+		}elseif (menuItemName = "%Export") {
+			s ec = ..ExportAll()
+			if ec {
+				w "Экспорт программ выполнен",!
+			}
+		}elseif (menuItemName = "%Import") {
+			s ec = ..ImportAll()
+			s Reload = 1
+		}elseif (menuItemName = "%Clone") {
+			if ##class(%File).CreateDirectoryChain(..TempFolder()) {
+				// cleanup items info
+				k @..#Storage
+				s Action = 3
+				s Target = ..GitCommand("clone", "")
+			} else {
+				s ec = ..MakeError("Не удалось создать папку "_..TempFolder())
+			}
+		}elseif ($LF(..MenuItemList(), menuItemName) > 0) {
+				s Action = 3
+				#dim command As %String = $ZCVT($E(menuItemName, 2, *), "L")
+				s Target = ..GitCommand(command)
+		}
+	}elseif (menuName = "%SourceMenuContext") {
+		if (menuItemName = "%AddToSC") {
+			s ec = ..AddToSourceControl(InternalName)
+		}elseif (menuItemName = "%RemoveFromSC") {
+			s ec = ..RemoveFromSourceControl(InternalName)
+		}
+		if ($LF(..MenuContextItemList(), menuItemName) > 0) {
+			s Action = 3
+			s command = $ZCVT($E(menuItemName, 2, *), "L")
+			s Target = ..GitCommand(command, InternalName)
+		}
+	}
+	;if Action = 3 {
+	;	s Action = 0
+	;	d $zf(-1, Target)
+	;}
+	q ec
+]]></Implementation>
+</Method>
+
+<Method name="AfterUserAction">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[Type:%Integer,Name:%String,InternalName:%String,Answer:%Integer,Msg:%String="",&Reload:%Boolean]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="IsNamespaceInGit">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[##class(%File).Exists(..TempFolder()_".git")
+]]></Implementation>
+</Method>
+
+<Method name="ExternalName">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>name:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	#define BACKSLASH "\"
+	s name = $TR(name,"/", $$$BACKSLASH)
+
+	// lower case for extensions
+	#dim extension As %String = $ZCVT($P(name,".",$L(name,".")),"L")
+	s $P(name,".",$L(name,".")) = extension
+	
+	// we shall put classes in different folders
+	if extension = "cls" {
+		s name = $TR( $P(name,".", 1, $L(name,".")-1), ".", $$$BACKSLASH)_".cls"
+	}
+	
+	// we shall delete csp-app from csp files
+	if $E(name, 1) = $$$BACKSLASH {
+		s $E(name, 1) = ""
+	}
+	if $P(name, $$$BACKSLASH, 1) = "csp" {
+		s $P(name, $$$BACKSLASH, 1, 2) = "csp"
+	}
+
+	q $TR(name," *?","___")_".xml"
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+ClassMethod IsSystem(InternalName As %String) As %Boolean [ CodeMode = expression ]
+{
+$E(InternalName) = "%"
+}
+
+ClassMethod IsGenerated(InternalName As %String) As %Boolean
+{
+	#dim extension As %String = $ZCVT($P(InternalName, ".", $L(InternalName, ".")), "L")
+	#dim nameWithoutExtension As %String = $P(InternalName, ".", 1, $L(InternalName, ".") - 1)
+	#dim isGenerated As %Integer = 0
+	#dim p
+	if extension = "cls" {
+		s p = ##class(%Dictionary.ClassDefinition).%OpenId(nameWithoutExtension)
+		s isGenerated = p && (p.GeneratedBy'="")
+		k p
+	} else {
+		s p = ##class(%RoutineMgr).%OpenId($case(extension,"prj":nameWithoutExtension, :InternalName))
+		s isGenerated = p && p.Generated
+		k p
+	}
+	q isGenerated
+}
+*/
+]]></Content>
+</UDLText>
+
+<Method name="AddToSourceControl">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim i As %Integer
+	f i = 1:1:$L(InternalName, ",") {
+		#dim item As %String = $P(InternalName, ",", i)
+		s @..#Storage@("items", item) = ""
+	}
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="RemoveFromSourceControl">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim sc As %Status = $$$OK
+	if $D(@..#Storage@("items", InternalName)) {
+		k @..#Storage@("items", InternalName)
+		s sc = ..DeleteExternalFile(InternalName)
+		d ..RemoveFolderIfEmpty(..TempFolder())
+	} else {
+		#dim parentElement As %String = ""
+		if ..IsInSourceControl(InternalName, .parentElement) {
+			s sc = ..MakeError("Этот элемент является частью "_parentElement_", который занесен в SC")
+		}else {
+			s sc = ..MakeError("Этот элемент не находится в SourceControl")
+		}
+		
+	}
+	q sc
+]]></Implementation>
+</Method>
+
+<Method name="IsCspFolder">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	#dim extension = $P(InternalName, ".", $L(InternalName, "."))
+	q:extension="csp" 0
+	
+	#dim filename = $system.CSP.GetFileName(InternalName_"/")
+	q filename'="" && ##class(%File).DirectoryExists(filename)
+]]></Implementation>
+</Method>
+
+<Method name="Type">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	#dim extension As %String = $ZCVT($P(InternalName,".",$L(InternalName,".")),"L")
+	#dim type As %String = extension
+	
+	if $E(InternalName, 1, 4) = "/csp" {
+		s type ="csp"
+	}
+
+	q type
+]]></Implementation>
+</Method>
+
+<Method name="NameWithoutExtension">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[$piece(InternalName, ".", 1, $length(InternalName,".")-1)
+]]></Implementation>
+</Method>
+
+<Method name="IsClassInPackage">
+<Description>
+packageName without extension</Description>
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>ClassName:%String,packageName:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[$E(ClassName, 1, $L(packageName)) = packageName
+]]></Implementation>
+</Method>
+
+<Method name="IsItemInProject">
+<Description>
+projectName without extension</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String,projectName:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	// we should check two cases
+	// direct inclusion
+	// inclusion in package or csp-folder that contained in project
+	#dim type As %String = ..Type(InternalName)
+	//w InternalName, "->"
+	#dim name As %String = $case(type, "cls": ..NameWithoutExtension(InternalName), 
+	                                   "pkg": $TR(..NameWithoutExtension(InternalName), "/", "."), 
+	                                   "csp": $E(InternalName, 2, *),
+	                                   :InternalName)
+	if $E(name) = "." && (type = "pkg") {
+		s $E(name) = ""
+	}
+	
+	//w name, " "
+	#dim checkId = projectName_"||"_name_"||"_$ZCVT(type,"U")
+	//w checkId
+	#dim isItemInProject As %Boolean = ##class(%Studio.ProjectItem).%ExistsId(checkId)
+	//w " ", isItemInProject, !
+	
+	#dim i As %Integer
+	if 'isItemInProject && ((type = "cls") || (type="pkg")) {
+		for i = 1:1:$L(name, ".") {
+			s checkId = projectName_"||"_$P(name, ".", 1, i)_"||PKG"
+			//w checkId, !
+			if ##class(%Studio.ProjectItem).%ExistsId(checkId) {
+				s isItemInProject = 1
+				q
+			}
+		}
+	}
+	
+	if 'isItemInProject && (type = "csp") {
+		for i = 1:1:$L(name, "/") {
+			s checkId = projectName_"||"_$P(name, "/", 1, i)_"||DIR"
+			
+			if ##class(%Studio.ProjectItem).%ExistsId(checkId) {
+				s isItemInProject = 1
+				q
+			}
+		}
+	}
+	q isItemInProject
+]]></Implementation>
+</Method>
+
+<Method name="IsItemInCSPFolder">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>InternalName:%String,cspFolder:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[$E(InternalName, 1, $L(cspFolder)) = cspFolder
+]]></Implementation>
+</Method>
+
+<Method name="FindInPackages">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[InternalName:%String,&sourceControlItem:%String]]></FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	#dim item As %String = ""
+	#dim found As %Boolean = 0
+	f  {
+		s item = $O(@..#Storage@("items", item))
+		q:item=""
+		continue:..Type(item)'="pkg"
+		#dim packageName As %String = ..NameWithoutExtension(item)
+
+		if ..IsClassInPackage(InternalName, packageName) {
+			s found = 1
+			s sourceControlItem = packageName
+			q
+		}
+	}
+	q found
+]]></Implementation>
+</Method>
+
+<Method name="FindInProjects">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[InternalName:%String,&sourceControlItem:%String]]></FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	#dim item As %String = ""
+	#dim found As %Boolean = 0
+	f  {
+		s item = $O(@..#Storage@("items", item))
+		q:item=""
+		continue:..Type(item)'="prj"
+		#dim projectName As %String = ..NameWithoutExtension(item)
+		
+		if ..IsItemInProject(InternalName, projectName) {
+			s found = 1
+			s sourceControlItem = projectName
+			q
+		}
+	}
+	q found
+]]></Implementation>
+</Method>
+
+<Method name="FindInCspFolders">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[InternalName:%String,&sourceControlItem:%String]]></FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	#dim cspFolder As %String = ""
+	#dim found As %Boolean = 0
+	f  {
+		s cspFolder = $O(@..#Storage@("items", cspFolder))
+		q:cspFolder=""
+		continue:'(..Type(cspFolder)="csp" && ..IsCspFolder(cspFolder))
+		
+		if ..IsItemInCSPFolder(InternalName, cspFolder) {
+			s found = 1
+			s sourceControlItem = cspFolder
+			q 
+		}
+	}
+	q found
+]]></Implementation>
+</Method>
+
+<Method name="IsInSourceControl">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[InternalName:%String,&sourceControlItem:%String]]></FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	#dim isInSourceControl As %Boolean = 1
+	
+	s isInSourceControl = $D(@..#Storage@("items",InternalName)) > 0
+	if isInSourceControl {
+		s sourceControlItem = InternalName
+	}else {
+		//if no direct reference maybe we have to look in packages, projects or csp-apps ?
+		//We have three groups of routines
+		//packages for classes
+		//projects for everything
+		//csp-folders for csp and static files
+
+		#dim type As %String = ..Type(InternalName)
+		if type = "cls" {
+			s isInSourceControl = ..FindInPackages(InternalName, .sourceControlItem)
+		} elseif type = "csp" {
+			s isInSourceControl = ..FindInCspFolders(InternalName, .sourceControlItem)
+		}
+		
+		// our last chance to find item -- let's look in projects
+		if 'isInSourceControl {
+			s isInSourceControl = ..FindInProjects(InternalName, .sourceControlItem)
+		}
+	}
+	//w "checking ", $G(type), " ", InternalName, "=", isInSourceControl, !
+	q isInSourceControl
+]]></Implementation>
+</Method>
+
+<Method name="FullExternalName">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[..TempFolder()_..ExternalName(InternalName)
+]]></Implementation>
+</Method>
+
+<Method name="RoutineTSH">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	#dim tsh = $G(@..#Storage@("TSH",InternalName))
+	if tsh = "" {
+		#dim ts As %String = ##class(%RoutineMgr).TS(InternalName)
+		if ts '= "" {
+			// prj files have milliseconds in timestamp, so we crop them
+			s tsh = $P($zdth(ts, 3),".",1)
+		}
+	}
+	q tsh
+]]></Implementation>
+</Method>
+
+<Method name="UpdateRoutineTSH">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String,tsh:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s @..#Storage@("TSH",InternalName) = $G(tsh, $H)
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="DeleteExternalFile">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim fullName = ##class(Utils).FullExternalName(InternalName)
+	#dim ec As %Status = $$$OK
+	w "Let's delete ", fullName,!
+	if ##class(%File).Exists(fullName) {
+		s ec = ##class(%File).Delete(fullName)
+		k @..#Storage@("TSH",InternalName)
+		w "deleted", !
+	}
+	Quit ec
+]]></Implementation>
+</Method>
+
+<Method name="IsFileHasSameTS">
+<Description>
+return 1 if file has same TS as routine
+return 0 if they have different TS
+return -1 if file does not exist</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Integer</ReturnType>
+<Implementation><![CDATA[
+	#dim filename As %String = ..FullExternalName(InternalName)
+	#dim fileTSH = ##class(%File).GetFileDateModified(filename)
+	#dim routineTSH = ..RoutineTSH(InternalName)
+	q $case(fileTSH, -2:-1, :routineTSH = fileTSH)
+]]></Implementation>
+</Method>
+
+<Method name="LoadIfOutdated">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	//WRITE "Before Load Of: ", InternalName, " ", ..IsInSourceControl(InternalName), !
+	//q:'..IsInSourceControl(InternalName) $$$OK
+	#dim filename As %String = ..FullExternalName(InternalName)
+	#dim fileTSH = ##class(%File).GetFileDateModified(filename)
+	#dim sc As %Status = $$$OK
+
+	if ..IsFileHasSameTS(InternalName) = 0 {
+		s sc = $system.OBJ.Load(filename,"-l-d")
+		if sc {
+			s sc = ..UpdateRoutineTSH(InternalName, fileTSH)
+		}
+	} else {
+			//WRITE "skip import -- same TS",!
+	}
+	Quit sc
+]]></Implementation>
+</Method>
+
+<Method name="ImportRoutines">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim err, itemList
+	#define DoNotLoad 1
+	kill err, itemList
+	s err = 0	
+	
+	#dim ec As %Status = $system.OBJ.ImportDir(..TempFolder(),"*.xml","-d",.err,1, .itemList, $$$DoNotLoad)
+	q:'ec ec
+	
+	#dim internalName As %String = ""
+	f  {
+		s internalName = $O(itemList(internalName))
+		q:internalName=""
+		#dim sc As %Status = ..LoadIfOutdated(internalName)
+		if $$$ISERR(sc) {
+			s ec = $$$ADDSC(ec, sc)
+		}
+	}
+	q ec
+	//let's delete all items for which corresponding files had been deleted
+	
+	#dim item as %String = ""
+	f  {
+		s item = $O(@..#Storage@("TSH", item))
+		q:item=""
+		if '##class(%File).%Exists(..FullExternalName(item)) {
+			write "We should delete ", item, !
+		}
+	}
+	
+	w "import done", !
+	
+	/*
+	// now we should fix reference to csp pages in project items
+	// that is: if project was exported from USER and imported in SAMPLES
+	// then all reference to csp/user/page.csp should be changed to csp/samples/page.csp
+	s item ="", oldCspApp = "", newCspApp = ""
+	f  {
+		s item = $O(^oddPROJECT(loadedProject,"Items",item))
+		q:item=""
+		if $D(^oddPROJECT(loadedProject,"Items",item,"CSP")) {
+			s newitem = item
+			s $P(newitem,"/",1,2) = $E($system.CSP.GetDefaultApp($znspace),2,*)
+			if newitem '= item {
+				s ^oddPROJECT(loadedProject,"Items",newitem,"CSP") = ^oddPROJECT(loadedProject,"Items",item,"CSP")
+				k ^oddPROJECT(loadedProject,"Items",item,"CSP")
+				s newCspApp = $E($system.CSP.GetDefaultApp($znspace),2,*)
+				s oldCspApp = $P(item,"/",1,2)
+			}
+		}
+	}
+	*/
+]]></Implementation>
+</Method>
+
+<Method name="ExportRoutinesAux">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>path:%String,sep:%String="",level:%Integer=0</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#define Dir
+	#define OrderBy
+	#define SystemFiles
+	#define Flat
+	#define NotStudio
+	#define ShowGenerated 0
+	#define Filter
+	#define CspFile 5
+	#define Directory 9
+	#define CSPFolder 10
+	
+	#dim rs As %ResultSet = ##class(%ResultSet).%New("%RoutineMgr:StudioOpenDialog")
+	#dim ec As %Status = rs.Execute(path_$case(path,"":"",:"/")_"*",$$$Dir, $$$OrderBy, $$$SystemFiles, $$$Flat, $$$NotStudio, $$$ShowGenerated, $$$Filter)
+	q:'ec ec
+	while rs.Next() {
+		#dim name As %String = rs.Get("Name")
+		#dim isdirectory As %String = rs.Get("IsDirectory")
+		#dim type As %String = rs.Get("Type")
+		
+		if (type = $$$Directory) || (type = $$$CSPFolder) {
+			#dim newpath As %String = $case(path,"":name,:path_isdirectory_name)
+			#dim importedcnt As %Integer = 0
+			d ..ExportRoutinesAux(newpath, isdirectory, level + 1)
+		} else {
+			#dim InternalName As %String = path_sep_name
+			if (type = $$$CspFile) && ($E(InternalName) '= "/") {
+				s InternalName = "/"_InternalName
+			}
+			s ec = ..ExportItem(InternalName)
+		}
+	}
+	k rs
+	q ec
+]]></Implementation>
+</Method>
+
+<Method name="ExportItem">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String,expand:%Boolean=1</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim type = ..Type(InternalName)
+	
+	if type = "pkg" {
+		$$$QuitOnError(..ExportRoutinesAux(..NameWithoutExtension(InternalName), "."))
+	}elseif type = "prj" && expand {
+		$$$QuitOnError(..ExportProject(..NameWithoutExtension(InternalName)))
+		$$$QuitOnError(..ExportItem(InternalName, 0))
+	}elseif (type = "csp") && ..IsCspFolder(InternalName) {
+		$$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
+	}else {
+		if ..IsFileHasSameTS(InternalName) '= 1 {
+			w "exporting new version of  ", InternalName, !
+			#dim filename As %String = ..FullExternalName(InternalName)
+			$$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
+			$$$QuitOnError(..UpdateRoutineTSH(InternalName, $H))
+		}
+	}
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ExportProject">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>project:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim rs As %ResultSet = ##class(%ResultSet).%New("%Studio.Project:ProjectItemsList")
+	$$$QuitOnError(rs.Execute(project))
+	#dim typesWithoutExtension As %List = $LB("CLS", "PKG")
+	while rs.Next() {
+		#dim name = rs.Get("Name")
+		if $LF(typesWithoutExtension, rs.Get("Type")) {
+			s name = name _ "." _ rs.Get("Type")
+		}
+		#dim ec As %Status = ..ExportItem(name)
+		q:'ec
+	}
+	k rs
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ExportAll">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	$$$QuitOnError(..ExportRoutines())
+	q ..ExportSCList()
+]]></Implementation>
+</Method>
+
+<Method name="ImportAll">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	$$$QuitOnError(..ImportSCList())
+	q ..ImportRoutines()
+]]></Implementation>
+</Method>
+
+<Method name="ExportRoutines">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim item As %String = ""
+	#dim ec As %Status = $$$OK
+	f  {
+		s item = $O(@..#Storage@("items",item))
+		q:item=""
+		s ec = ..ExportItem(item)
+		q:'ec		
+	}
+	q ec
+]]></Implementation>
+</Method>
+
+<Method name="ExportSCList">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim filename = ..TempFolder()_..#SCListFilename
+	#dim file As %File = ##class(%File).%New(filename)
+	#dim item As %String = ""
+	#dim defaultCspApp As %String = $system.CSP.GetDefaultApp($znspace)
+	$$$QuitOnError(file.Open("WSN"))
+	
+	f  {
+		s item = $O(@..#Storage@("items",item))
+		q:item=""
+		#dim fixedItem As %String = item
+		if $E(fixedItem, 1, $L(defaultCspApp)) = defaultCspApp {
+			s $E(fixedItem, 1, $L(defaultCspApp)) = "<cspapp>"
+		}
+		
+		d file.WriteLine(fixedItem)
+		
+	}
+	$$$QuitOnError(file.%Save())
+	d file.Close()
+	k file
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ImportSCList">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	#dim filename = ..TempFolder()_..#SCListFilename
+	#dim file As %File = ##class(%File).%New(filename)
+	#dim defaultCspApp As %String = $system.CSP.GetDefaultApp($znspace)
+	#dim eol As %Boolean
+	
+	$$$QuitOnError(file.Open("R", 10))
+	
+	#dim a 
+	while 'file.AtEnd  {
+		#dim s As %String = file.ReadLine(,,.eol)
+		continue:s=""
+		#dim item As %String = $Replace(s, "<cspapp>", defaultCspApp)
+		s a(item) = ""
+	}
+	k @..#Storage("items")
+	m @..#Storage("items") = a
+	d file.Close()
+	k file
+	q $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="RemoveFolderIfEmpty">
+<Description>
+returns true if directory was deleted</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>path:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	#dim rs As %Status = ##class(%ResultSet).%New("%File:FileSet")
+	#define DirsFirst 1
+	$$$QuitOnError(rs.Execute(path,,,$$$DirsFirst))
+	#dim fileCount As %Integer = 0
+	while rs.Next() {
+		#dim fullname As %String = rs.Get("Name")
+		#dim type As %String = rs.Get("Type")
+		#dim name As %String = rs.Get("ItemName")
+		#define IsDirectory(%type) %type="D"
+		
+		s fileCount = fileCount + 1
+		q:'$$$IsDirectory(type)
+		continue:name=".git"
+		if ..RemoveFolderIfEmpty(fullname) {
+			s fileCount = fileCount - 1
+		}
+	}
+	if fileCount = 0 {
+		d ##class(%File).RemoveDirectory(path)
+	}
+	k rs
+	q 'fileCount
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+ClassMethod ExportItem(item As %String) As %Status
+{
+	k data
+	s data("folderName") = ..TempFolder()
+	s data("time") = $H
+	s data("Type") = $P(item, ".", $L(item, "."))
+	if data("Type") = ".CLS" {
+		s $E(item, $L(item) - 3, $L(item)) = ".cls"
+	}
+	q ..ExportProjectItem(item, .data)
+}
+
+ClassMethod ForAllProjectItems(projectName As %String, execute As %String, ByRef data) As %Status
+{
+	s res = $$$OK
+	s rs = ##class(%ResultSet).%New("%Studio.Project:ProjectItemsList")
+	$$$QuitOnError(rs.Execute(projectName))
+	while rs.Next() {
+		s item = rs.Get("Name")
+		s data("Type") = rs.Get("Type")
+		if rs.Get("Type") = "CLS" {
+			s item = item_".cls"
+		}
+		else {
+			s extension = $P(item,".",$L(item,"."))
+			if extension '="csp" {
+				s $P(item,".",$L(item,".")) = $ZCVT(extension,"U")
+			}
+		}
+		s ec = $classmethod("%SourceControl.Git.Utils", execute, item, .data)
+		if 'ec {
+			s res = $$$ADDSC(res, ec)
+		}
+	}
+	k rs
+	q res
+}
+
+ClassMethod RemoveItemFromSourceControl(projectName As %String, item As %String) As %Status
+{
+	s fileName = ..TempFolder(projectName)_..ExternalName(item)
+	s ec = ##class(%File).Delete(fileName)
+	//$$$QuitOnError(..ExecuteGitCommand("rm "_fileName, projectName))
+	if ec {
+		k @..#Storage(projectName,"items",item)
+	}
+	q ec
+}
+
+ClassMethod ExecuteCommand(cmd As %String, errmsg As %String, Output result As %String) As %Status
+{
+	s cmd = cmd_" 2>&1"
+	w cmd,!
+	if $L(cmd) > 255 {
+		q ..MakeError("Длина команды "_$L(cmd)_". Должна быть не больше 255 символов."_$C(10,13)_cmd)
+	}
+	d $system.Process.SetZEOF(1) // no error -- use $ZEOF
+	open cmd:"QR"
+
+	s result = ""
+	s ec = $$$OK
+	for {
+		use cmd r x
+		q:$ZEOF=-1
+		//fix for git.cmd file
+		if $F(x,">@") = 0 {
+			use $Principal w x,!
+		}
+		s result = result_$C(10,13)_x
+	} 
+	c cmd
+	q ec
+}
+
+ClassMethod ProcessGitError(projectName As %String, result As %String) As %Status
+{
+	if $F(result, "error:"){
+		q ..MakeError(result)
+	}else {
+		q $$$OK
+	}
+}
+
+ClassMethod ExecuteGitCommand(cmd As %String, projectName As %String, ByRef result As %String) As %Status
+{
+	s ec = ..ExecuteCommand("cd /d "_..TempFolder(projectName)_" && "_..GitBin(projectName)_" "_cmd,"", .result)
+	q:'ec ec
+	q ..ProcessGitError(projectName, result)
+}
+
+ClassMethod PutItemInSourceControl(projectName As %String, item As %String, val As %String) As %Status
+{
+	if ..IsItemInSourceControl(projectName, item) {
+		q ..MakeError(item_" уже в SourceControl")
+	}else {
+		s fileName = ..ExternalName(item)
+		//$$$QuitOnError(..ExecuteGitCommand(" add "_fileName, projectName))
+		s ec = ..ItemTimeSet(projectName, item, val)
+		q ec
+	}
+}
+
+
+ClassMethod ExportProjectItem(item As %String, ByRef data) As %Status [ ProcedureBlock = 1 ]
+{
+	if data("Type") = "PKG" {
+		s data("Type")=""
+		s rs = ##class(%ResultSet).%New()
+		$$$QuitOnError(rs.Prepare("select ID from %Dictionary.ClassDefinition where Name like ? || '.%'"))
+		$$$QuitOnError(rs.Execute(item))
+		s ec = $$$OK
+		while rs.Next() {
+			s item = rs.Get("ID")_".cls"
+			s ec = ..ExportProjectItem(item, .data)
+			q:'ec
+		}
+		k rs
+		q ec
+	}
+	
+	s fileName = data("folderName")_..ExternalName(item)
+	$$$QuitOnError($system.OBJ.Export(item, fileName,"-d/diff"))
+	
+	// file was exported first time
+ 	if '..IsItemInSourceControl(data("projectName"),item) {
+	 	$$$QuitOnError(..PutItemInSourceControl(data("projectName"), item, data("time")))
+ 	} else {
+	 	$$$QuitOnError(..ItemTimeSet(data("projectName"), item, data("time")))
+ 	}
+ 	
+ 	q $$$OK
+}
+
+ClassMethod IsItemInSourceControl(projectName As %String, item As %String) As %Boolean [ CodeMode = expression ]
+{
+..ItemTimeGet(projectName, item) '= ""
+}
+
+ClassMethod ItemTimeSet(projectName As %String, item As %String, time As %String) As %Status
+{
+	s @..#Storage@(projectName,"items",item) = $G(time,$H)
+	q $$$OK
+}
+
+ClassMethod ItemTimeGet(projectName As %String, item As %String) As %Status [ CodeMode = expression ]
+{
+$G(@..#Storage@(projectName,"items",item))
+}
+
+
+*/
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[/** OLD METHODS **/
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+
+ClassMethod GitRepo(projectName As %String) As %String
+{
+	s repo = ..GetParameterFromProject(projectName, "git-repo")
+	s login = ..Login(projectName)
+	s auth = ""
+	if login'="" {
+		s auth = login
+		s password = ..Password(projectName)
+		if password '="" {
+			s auth = auth_":"_password
+		}
+		s auth=auth_"@"
+		// now we add auth to rep
+		if $F(repo,"://") {
+				s repo = $Replace(repo,"://","://"_auth)
+		}else {
+			s repo = auth_repo
+		}
+	}
+	q repo
+}
+
+ClassMethod Login(projectName As %String, username As %String = {$username}) As %String [ CodeMode = expression ]
+{
+$G(@..#Storage@(projectName,"settings",username,"login"))
+}
+
+ClassMethod Password(projectName As %String) As %String [ CodeMode = expression ]
+{
+$G(@..#Storage@(projectName,"settings",$username,"password"))
+}
+
+ClassMethod ResetPassword(projectName As %String) As %Status
+{
+	k @..#Storage@(projectName,"settings",$username,"password")
+	q $$$OK
+}
+
+ClassMethod IsDelPassword(projectName As %String, username As %String = {$username}) As %Status [ CodeMode = expression ]
+{
+$G(@..#Storage@(projectName,"settings",username,"isDelPassword"))
+}
+
+ClassMethod UpdateProjectSettings(projectName, username As %String, ByRef settings) As %Status
+{
+	for param="login","password","isDelPassword" {
+		if $D(settings(param)) {
+			continue:(settings(param)="" && (param="password"))
+			s @..#Storage@(projectName,"settings", username,param) = settings(param)
+		}
+	}
+	q $$$OK
+}
+
+ClassMethod UpdateSettings(projectName As %String, username As %String, ByRef settings) As %Status
+{
+	//TODO :: determine OS on compile time
+	s slash = $case($system.Version.GetOS(),"Windows":"\",:"/")
+	
+	// we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
+	s @($Replace(..#Storage,"^","^["""_..#InstallNamespace_"""]"))@("%gitBinPath") = settings("gitBinPath")
+	
+	// also we have one default temp folder for all namespaces
+	if settings("defaultTemp")'="" && ($E(settings("defaultTemp"),*)'=slash) {
+		s settings("defaultTemp") = settings("defaultTemp")_slash
+	}
+	s @($Replace(..#Storage,"^","^["""_..#InstallNamespace_"""]"))@("%defaultTemp") = settings("defaultTemp")
+	
+	// other settings are stored in current namespace
+	q ..UpdateProjectSettings(projectName, username, .settings)
+}
+
+ClassMethod DeleteFolder(folderName As %String) As %Status
+{
+	if $system.Version.GetOS() = "Windows" {
+		$$$QuitOnError(..ExecuteCommand("rmdir /S /Q "_folderName))
+		$$$QuitOnError(..ExecuteCommand("mkdir "_folderName))
+	} else {
+		$$$QuitOnError(..ExecuteCommand("rm -rf "_folderName))
+		$$$QuitOnError(..ExecuteCommand("mkdir -p "_folderName))
+	}
+	q $$$OK
+}
+
+ClassMethod GitClone(projectName As %String) As %Status [ CodeMode = expression ]
+{
+..ExecuteGitCommand("clone "_..GitRepo(projectName)_ " "_..TempFolder(projectName), projectName)
+}
+
+ClassMethod UpdateCommitTS(projectName As %String) As %Status
+{
+	s ec = $$$OK
+	s data("time") = $H, data("projectName") = projectName
+	s ec = ..ForAllProjectItems(projectName, "UpdateCommitTSItem", .data)
+	q ec
+}
+
+ClassMethod UpdateCommitTSItem(item As %String, ByRef data) As %Status
+{
+	if data("Type") '= "PKG" { // we don't need no packages here
+		s @..#Storage@(data("projectName"),"items",item) = data("time")
+	}
+	q $$$OK
+}
+
+ClassMethod Commit(projectName As %String, comment As %String) As %Status
+{
+	s tempFolder = ..TempFolder(projectName)
+	// write comment to temp file
+	s tmpFile = tempFolder_"commit.tmp"
+	Set file=##class(%File).%New(tmpFile)
+	$$$QuitOnError(file.Open("WSN"))
+	$$$QuitOnError(file.Write(comment))
+	do file.Close()
+	
+	
+	s result = ""
+
+	// commit
+	s ec = ..ExecuteGitCommand("commit -a --file="_tmpFile, projectName, .result)
+	if $F(result,"Commit failed") > 0 {
+		s ec = ..MakeError(result)
+	} else { 
+		s ec=$$$ADDSC(ec,..UpdateCommitTS(projectName))
+	}
+	// erase temp file anyway
+	if '##class(%File).Delete(tmpFile) {
+		//can't delete
+		s ec = $$$ADDSC(ec,..MakeError("Не удалось удалить временный файл с комментарием"))
+	}
+	q ec
+}
+
+ClassMethod Push(projectName As %String) As %Status
+{
+	s ec = ..ExecuteGitCommand("push origin master", projectName, .result)
+	q ec
+}
+
+ClassMethod CloneProject(projectName As %String) As %Status
+{
+	//delete temp folder
+	$$$QuitOnError(..DeleteFolder(..TempFolder(projectName)))
+	// cleanup items info
+	k @..#Storage@(projectName,"items")
+	//clone repo in temp folder
+	$$$QuitOnError(..GitClone(projectName))
+	$$$QuitOnError(..ImportProject(projectName))
+	//$$$QuitOnError(..ResetPassword(projectName))
+	q $$$OK
+}
+
+ClassMethod CommitProject(projectName As %String, comment As %String) As %Status
+{
+	$$$QuitOnError(..ExportProject(projectName))
+	$$$QuitOnError(..Commit(projectName, comment))
+	q $$$OK
+}
+
+ClassMethod ImportProject(projectName As %String) As %Status
+{
+	kill err, imported
+	s err = 0, ec = $$$OK
+	s ec= $system.OBJ.ImportDir(..TempFolder(projectName),"*.xml","",.err,1, .imported)
+	// what if we load project with different name?
+	// let's find out
+	s loadedProject = projectName,p=""
+	f  {
+		s p=$O(imported(p))
+		q:p=""
+		if $E(p,*-3,*) = ".prj" {
+			s loadedProject = $E(p,1,*-4)
+			q
+		}
+	} 
+	// we should fix project description -- change all LF to CRLF
+	lock +^oddPROJECT(loadedProject):5
+	s projectDescription = $LI(^oddPROJECT(loadedProject),3)
+	if $F(projectDescription,$C(13,10)) = 0 {
+		s $LI(^oddPROJECT(loadedProject),3) = $Replace(projectDescription,$C(10),$C(13,10))
+	}
+	lock -^oddPROJECT(loadedProject):5
+	// ok now let's handle errors
+	s SAXERRORCODE = 6301
+	k badxml
+	if err {
+		s ec = $$$OK
+		f i=1:1:err {
+			if err(i, "code") = SAXERRORCODE {
+				s fileName = $P($P(err(i,"param",1) ,"processing ",2)," at line",1)
+				w "Не удалось распарсить файл ",fileName,"!",!
+				s sc = ..LoadBrokenFile(fileName)
+				s badxml(fileName) = ..RoutineForBadFileName(fileName)
+			} else {
+				s ec = $$$ADDSC(ec, ..MakeError(err(i)))
+			}
+		}
+	}
+	if $D(badxml) {
+		w !,"===================================================",!
+		w "В следующие программы загружены проблемные xml-файлы:",!
+		s p=""
+		f  {
+			s p=$O(badxml(p))
+			q:p=""
+			w p," => ",badxml(p),!
+		}
+	}
+	if ec { // if no error
+		s item = "", time=$H
+		f  {
+			s item = $O(imported(item))
+			q:item=""
+			s ec = ..ItemTimeSet(loadedProject, item, time)
+			q:'ec
+		}
+	}
+
+	// now we should fix reference to csp pages in project items
+	// that is: if project was exported from USER and imported in SAMPLES
+	// then all reference to csp/user/page.csp should be changed to csp/samples/page.csp
+	s item ="", oldCspApp = "", newCspApp = ""
+	f  {
+		s item = $O(^oddPROJECT(loadedProject,"Items",item))
+		q:item=""
+		if $D(^oddPROJECT(loadedProject,"Items",item,"CSP")) {
+			s newitem = item
+			s $P(newitem,"/",1,2) = $E($system.CSP.GetDefaultApp($znspace),2,*)
+			if newitem '= item {
+				s ^oddPROJECT(loadedProject,"Items",newitem,"CSP") = ^oddPROJECT(loadedProject,"Items",item,"CSP")
+				k ^oddPROJECT(loadedProject,"Items",item,"CSP")
+				s newCspApp = $E($system.CSP.GetDefaultApp($znspace),2,*)
+				s oldCspApp = $P(item,"/",1,2)
+			}
+		}
+	}
+	
+	w "Был загружен проект ",loadedProject,!
+	if loadedProject '=projectName {
+		w "Вам нужно открыть ",loadedProject,", настроить его и заново сделать Clone.",!
+	}
+	q ec
+}
+
+ClassMethod PullProject(projectName As %String) As %Status
+{
+	s ec = $$$OK
+	//export all items to temp folder
+	$$$QuitOnError(..ExportProject(projectName))
+	//pull from repository
+	$$$QuitOnError(..GitPull(projectName))
+	//import new items from dir
+	s ec = ..ImportProject(projectName)
+	q ec
+}
+
+ClassMethod ResetProject(projectName As %String) As %Status
+{
+	$$$QuitOnError(..ExecuteGitCommand("reset --hard", projectName))
+	$$$QuitOnError(..ImportProject(projectName))
+	q $$$OK
+}
+
+ClassMethod GitPull(projectName As %String) As %Status [ CodeMode = expression ]
+{
+..ExecuteGitCommand("pull", projectName)
+}
+
+ClassMethod ViewLog(projectName As %String) As %Status
+{
+	q ..ExecuteGitCommand("log", projectName)
+}
+
+ClassMethod ResolveFileConflict(projectName As %String, internalName As %String) As %Status
+{
+	s fileName = ..TempFolder(projectName)_..ExternalName(projectName, internalName)
+	//$$$QuitOnError(..ExecuteCommand("resolve --accept=working "_fileName,projectName))
+	$$$QuitOnError(##class(%Routine).Delete(..RoutineForBadFileName(fileName)))
+	q $$$OK
+}
+
+ClassMethod CheckoutTo(projectName As %String, revision As %String) As %Status
+{
+	$$$QuitOnError(..ExecuteGitCommand("checkout "_revision, projectName))
+	$$$QuitOnError(..ImportProject(projectName))
+	q $$$OK
+}
+*/
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+/// Возвращает имя проекта, который хранится в репозитории
+ClassMethod FetchProjectNameFromSvnRepo(svnRepo As %String, username As %String, password As %String, ByRef err As %Status) As %String
+{
+	s err=..ExecuteCommand(..SvnBin("",username,password)_" ls "_svnRepo,"Не удалось получить список файлов с сервера",.result)
+	q:'err ""
+	s result = $TR(result,$C(13),$C(10))
+	s dl = $C(10)
+	s projectName = ""
+	f i=1:1:$L(result,dl) {
+		s str = $P(result,dl,i)
+		continue:str=""
+		;w $E(str, *-7, *),!
+		if $E(str, *-7, *) = ".prj.xml" {
+			s projectName = $E(str, 1,*-8)
+			q
+		}
+	}
+	q projectName
+}
+
+/// Делает clone репозитория<br/>
+/// Username -- имя пользователя Cache<br/>
+/// login -- имя пользователя SVN<br/>
+ClassMethod CloneFromRepo(svnRepo As %String, Username As %String, login As %String, password As %String) As %Status
+{
+	s projectName = ..FetchProjectNameFromSvnRepo(svnRepo, login, password,.ec)
+	q:'ec ec
+	
+	// ok now we now project name
+	k settings
+	s settings("login") = login
+	s settings("password") = password
+	$$$QuitOnError(..UpdateProjectSettings(projectName,Username, .settings))
+	s $LI(^oddPROJECT(projectName),3)="svn-repo="_svnRepo
+	
+	$$$QuitOnError(..CloneProject(projectName,1))
+	q $$$OK
+}
+*/
+]]></Content>
+</UDLText>
+</Class>
+
+
+<CSP name="gitprojectsettings.csp" application="/csp/sys/" default="1"><![CDATA[
+<html>
+<head>
+<title>Настройки Git</title></head>
+
+<body>
+<server>
+ if $D(%request.Data("gitsettings",1)) {
+	 k settings
+	 for param="gitBinPath","defaultTemp"{
+		 s settings(param) = $G(%request.Data(param,1))
+	 } 
+	 d ##class(%SourceControl.Git.Utils).UpdateSettings(.settings)
+ }
+ s gitBinPath = ##class(%SourceControl.Git.Utils).GitBinPath()
+ s defaultTemp = ##class(%SourceControl.Git.Utils).DefaultTemp()
+ s:defaultTemp="" defaultTemp =  "c:\temp\"
+</server>
+<form method='post'>
+<input type="hidden" name="gitsettings" value="1" />
+<h1>Настройки</h1>
+<table><tr>
+<td>Путь к файлу tortoiseproc.exe<br/>(Например c:\tortoisegit\bin\tortoiseproc.exe)</td><td><input type="text" name="gitBinPath" size=40 value='#(..EscapeHTML(gitBinPath))#'/></td>
+</tr><tr>
+<td>Путь к временной папке<br/>(Например c:\temp)</td><td><input type="text" name="defaultTemp" size=40 value='#(..EscapeHTML(defaultTemp))#'/></td>
+</tr>
+
+</table>
+<input type='submit' value = 'Сохранить!'/>
+</form>
+<csp:if condition='$D(%request.Data("gitsettings",1)) && (##class(%SourceControl.Git.Utils).NeedSettings() = 0)'>
+	<em>Нажмите на крестик в правом верхнем углу, чтобы закрыть окно настроек</em>
+</csp:if>
+</body>
+</html>]]></CSP>
+
+
+<Project name="git">
+  <Items>
+    <ProjectItem name="%SourceControl.Git" type="CLS"></ProjectItem>
+    <ProjectItem name="%SourceControl.Git.Utils" type="CLS"></ProjectItem>
+    <ProjectItem name="csp/sys/gitprojectsettings.csp" type="CSP"></ProjectItem>
+  </Items>
+</Project>
+</Export>
