@@ -58,7 +58,7 @@
 <Implementation><![CDATA[
 	if name = "%Cache-Git-Settings" {
 		// We always show Settings
-		s DisplayName = "Настройки"
+		s DisplayName = "Settings"
 		q $$$OK
 	} 
 	if name = "%Settings" {
@@ -221,7 +221,7 @@ Name of the file with version controlled items</Description>
 <Description><![CDATA[
 If equals to 0 all tortoise-git calls are asynchronous<br/>
 Otherwise calls are synchronous and import is automatically executed after git calls.]]></Description>
-<Default>1</Default>
+<Default>0</Default>
 </Parameter>
 
 <Parameter name="GitMenuItems">
@@ -276,7 +276,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[$G(@($Replace(..#Storage,"^","^["""_..#InstallNamespace_"""]"))@("%gitBinPath"))
+<Implementation><![CDATA[""""_$G(@($Replace(..#Storage,"^","^["""_..#InstallNamespace_"""]"))@("%gitBinPath"))_""""
 ]]></Implementation>
 </Method>
 
@@ -374,7 +374,7 @@ Returns root temp folder</Description>
 				s Action = 3
 				s Target = ..GitCommand("repocreate")
 			} else {
-				s ec = ..MakeError("Не удалось создать папку "_..TempFolder())
+				s ec = ..MakeError("Unable to create folder "_..TempFolder())
 			}
 		}elseif (menuItemName = "%Export") {
 			s ec = ..ExportAll()
@@ -391,7 +391,7 @@ Returns root temp folder</Description>
 				s Action = 3
 				s Target = ..GitCommand("clone", "")
 			} else {
-				s ec = ..MakeError("Не удалось создать папку "_..TempFolder())
+				s ec = ..MakeError("Unable to create folder "_..TempFolder())
 			}
 		}elseif ..IsMenuGitCommand(menuItemName) {
 				s Action = 3
@@ -413,10 +413,15 @@ Returns root temp folder</Description>
 	if (..#IsSYNC = 1) && (Action = 3) {
 		s Action = 0
 		d $zf(-1, "set HOME="_..DefaultTemp()_"&"_Target)
-		if ..IsImportAfter(menuItemName) {
-			s ec = ..ImportAll()
-		}
 	}
+	if ..IsImportAfter(menuItemName) && (Action = 3) {
+			if (..#IsSYNC = 1) {
+				s ec = ..ImportAll()
+			} else {
+				w "Chose Import All menu after work with Git!", !
+			}
+	}
+
 	q ec
 ]]></Implementation>
 </Method>
@@ -535,9 +540,9 @@ Returns root temp folder</Description>
 	} else {
 		#dim parentElement As %String = ""
 		if ..IsInSourceControl(InternalName, .parentElement) {
-			s sc = ..MakeError("Этот элемент является частью "_parentElement_", который занесен в SC")
+			s sc = ..MakeError("This element is contained in "_parentElement_" that tracked by SourceControl")
 		}else {
-			s sc = ..MakeError("Этот элемент не находится в SourceControl")
+			s sc = ..MakeError("Element is not in SourceControl")
 		}
 		
 	}
@@ -965,12 +970,12 @@ return -1 if file does not exist</Description>
 				s ec = $$$ADDSC(ec, $system.OBJ.DeleteProject(name))
 			}elseif type = "cls" {
 				s ec = $$$ADDSC(ec, $system.OBJ.Delete(item))
-			}elseif $LF($LB("mac","int","inc","bas","mvb", "mvi"), type) > 0 {
+			}elseif $LF($LB("mac","int","inc","bas","mvb", "mvi","dfi"), type) > 0 {
 				s ec = $$$ADDSC(ec, ##class(%Routine).Delete(item))
 			}elseif type = "csp" {
 				#dim filename = $system.CSP.GetFileName(item)
 				if ##class(%File).Exists(filename) && '##class(%File).Delete(filename) {
-					s ec = $$$ADDSC(ec, ..MakeError("Ошибка при удалении "_item))
+					s ec = $$$ADDSC(ec, ..MakeError("Error while removing "_item))
 				}
 			} else {
 				s deleted = 0
@@ -1240,8 +1245,8 @@ returns true if directory was deleted</Description>
 <Project name="git">
   <Items>
     <ProjectItem name="%SourceControl.Git" type="CLS"></ProjectItem>
-    <ProjectItem name="csp/sys/gitprojectsettings.csp" type="CSP"></ProjectItem>
     <ProjectItem name="%SourceControl.Git.Utils" type="CLS"></ProjectItem>
+    <ProjectItem name="csp/sys/gitprojectsettings.csp" type="CSP"></ProjectItem>
   </Items>
 </Project>
 </Export>
