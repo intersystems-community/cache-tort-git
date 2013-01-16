@@ -62,7 +62,7 @@
 		q $$$OK
 	} 
 	if name = "%Settings" {
-		s DisplayName = "Tortoise Git Settings"
+		s DisplayName = "TortoiseGit Settings"
 		q $$$OK
 	}
 	
@@ -128,6 +128,9 @@ this menu item from the list totally, 0 will gray the menu item out and the defa
 	#dim menu As %String= $piece(MenuName,",")
 	#dim name As %String = $piece(MenuName,",",2)
 	if menu = "%SourceMenuContext", name = "" {
+		s DisplayName = "Git"
+	}
+	if menu = "%SourceMenu", name = "" {
 		s DisplayName = "Git"
 	}
 	#dim ec As %Status = $$$OK
@@ -1225,18 +1228,18 @@ returns true if directory was deleted</Description>
 </server>
 <form method='post'>
 <input type="hidden" name="gitsettings" value="1" />
-<h1>Настройки</h1>
+<h1>Settings</h1>
 <table><tr>
-<td>Путь к файлу tortoiseproc.exe<br/>(Например c:\tortoisegit\bin\tortoiseproc.exe)</td><td><input type="text" name="gitBinPath" size=40 value='#(..EscapeHTML(gitBinPath))#'/></td>
+<td>Path to tortoiseproc.exe<br/>(e.g. c:\tortoisegit\bin\tortoiseproc.exe)</td><td><input type="text" name="gitBinPath" size=40 value='#(..EscapeHTML(gitBinPath))#'/></td>
 </tr><tr>
-<td>Путь к временной папке<br/>(Например c:\temp)</td><td><input type="text" name="defaultTemp" size=40 value='#(..EscapeHTML(defaultTemp))#'/></td>
+<td>Path to temp folder<br/>(e.g. c:\temp)</td><td><input type="text" name="defaultTemp" size=40 value='#(..EscapeHTML(defaultTemp))#'/></td>
 </tr>
 
 </table>
-<input type='submit' value = 'Сохранить!'/>
+<input type='submit' value = 'Save!'/>
 </form>
 <csp:if condition='$D(%request.Data("gitsettings",1)) && (##class(%SourceControl.Git.Utils).NeedSettings() = 0)'>
-	<em>Нажмите на крестик в правом верхнем углу, чтобы закрыть окно настроек</em>
+	<em>Click cross in the upper-right corner to close the settings window.</em>
 </csp:if>
 </body>
 </html>]]></CSP>
