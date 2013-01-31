@@ -369,7 +369,7 @@ Returns root temp folder</Description>
 		if (menuItemName = "%Cache-Git-Settings") {
 			s Action = 2
 			#dim defNamespace As %String = ..#InstallNamespace
-			s Target = $system.CSP.GetDefaultApp(defNamespace)_"/gitprojectsettings.csp?NSpace="_$znspace_"&Username="_$username
+			s Target = ##class(%cspapp.gitprojectsettings).%GetParameter("CSPURL")_"?NSpace="_$znspace_"&Username="_$username
 		}elseif (menuItemName = "%CreateRepo") {
 			if ##class(%File).CreateDirectoryChain(..TempFolder()) {
 				// cleanup items info
@@ -1211,7 +1211,7 @@ returns true if directory was deleted</Description>
 <CSP name="gitprojectsettings.csp" application="/csp/sys/" default="1"><![CDATA[
 <html>
 <head>
-<title>Настройки Git</title></head>
+<title>Cache-Git Settings</title></head>
 
 <body>
 <server>
@@ -1245,7 +1245,7 @@ returns true if directory was deleted</Description>
 </html>]]></CSP>
 
 
-<Project name="git">
+<Project name="git" LastModified="2013-01-31 14:06:21.590577">
   <Items>
     <ProjectItem name="%SourceControl.Git" type="CLS"></ProjectItem>
     <ProjectItem name="%SourceControl.Git.Utils" type="CLS"></ProjectItem>
