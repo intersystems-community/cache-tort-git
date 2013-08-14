@@ -597,7 +597,9 @@ projectName without extension</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-	#dim tsh = $G(@..#Storage@("TSH", ..NormalizeExtension(InternalName)))
+	#dim type = ..Type(InternalName)
+	//for csp-files (csp,js,html,css, all that stored in csp/...) we always check for changes in external file
+	#dim tsh = $case(type,"csp":"",:$G(@..#Storage@("TSH", ..NormalizeExtension(InternalName))))
 	if tsh = "" {
 		#dim ts As %String = ##class(%RoutineMgr).TS(InternalName)
 		if ts '= "" {
@@ -652,12 +654,25 @@ return 0 if they have different TS
 return -1 if file does not exist</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>InternalName:%String</FormalSpec>
-<ReturnType>%Integer</ReturnType>
+<ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
 	#dim filename As %String = ..FullExternalName(InternalName)
 	#dim fileTSH = ##class(%File).GetFileDateModified(filename)
 	#dim routineTSH = ..RoutineTSH(InternalName)
 	q $case(fileTSH, -2:-1, :routineTSH = fileTSH)
+]]></Implementation>
+</Method>
+
+<Method name="IsTempFileOutdated">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	#dim filename As %String = ..FullExternalName(InternalName)
+	#dim tempFileTSH = ##class(%File).GetFileDateModified(filename)
+	#dim routineTSH = ..RoutineTSH(InternalName)
+	s:tempFileTSH=-2 tempFileTSH = "0,0"
+	q $zdt(routineTSH,3)]$zdt(tempFileTSH,3)
 ]]></Implementation>
 </Method>
 
@@ -855,11 +870,11 @@ return -1 if file does not exist</Description>
 	}elseif (type = "csp") && ..IsCspFolder(InternalName) {
 		$$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
 	}else {
-		if ..IsFileHasSameTS(InternalName) '= 1 {
+		if ..IsTempFileOutdated(InternalName) {
 			w "exporting new version of  ", InternalName, !
 			#dim filename As %String = ..FullExternalName(InternalName)
 			$$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
-			$$$QuitOnError(..UpdateRoutineTSH(InternalName, $H))
+			$$$QuitOnError(..UpdateRoutineTSH(InternalName))
 		}
 	}
 	q $$$OK
