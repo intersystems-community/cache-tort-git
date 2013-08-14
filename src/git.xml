@@ -654,7 +654,7 @@ return 0 if they have different TS
 return -1 if file does not exist</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>InternalName:%String</FormalSpec>
-<ReturnType>%String</ReturnType>
+<ReturnType>%Integer</ReturnType>
 <Implementation><![CDATA[
 	#dim filename As %String = ..FullExternalName(InternalName)
 	#dim fileTSH = ##class(%File).GetFileDateModified(filename)
@@ -874,7 +874,7 @@ return -1 if file does not exist</Description>
 			w "exporting new version of  ", InternalName, !
 			#dim filename As %String = ..FullExternalName(InternalName)
 			$$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
-			$$$QuitOnError(..UpdateRoutineTSH(InternalName))
+			$$$QuitOnError(..UpdateRoutineTSH(InternalName, $H))
 		}
 	}
 	q $$$OK
