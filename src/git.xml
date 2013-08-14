@@ -654,7 +654,7 @@ return 0 if they have different TS
 return -1 if file does not exist</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>InternalName:%String</FormalSpec>
-<ReturnType>%Integer</ReturnType>
+<ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
 	#dim filename As %String = ..FullExternalName(InternalName)
 	#dim fileTSH = ##class(%File).GetFileDateModified(filename)
@@ -671,7 +671,8 @@ return -1 if file does not exist</Description>
 	#dim filename As %String = ..FullExternalName(InternalName)
 	#dim tempFileTSH = ##class(%File).GetFileDateModified(filename)
 	#dim routineTSH = ..RoutineTSH(InternalName)
-	s:tempFileTSH=-2 tempFileTSH = "0,0"
+	//file not found or path not found or some other error
+	s:tempFileTSH<0 tempFileTSH = "0,0"
 	q $zdt(routineTSH,3)]$zdt(tempFileTSH,3)
 ]]></Implementation>
 </Method>
