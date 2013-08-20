@@ -42,9 +42,11 @@ Instead of your-git-server, your-git-login and your-git-password write actual va
   * Press OK
 
 ###How to join existing repository
-10. Chose menu Clone
-20. In appeared window TortoiseGit adds repository name to folder. You should delete it (Write c:\temp\git\user instead of c:\temp\git\user\reponame)
-30. Select menu Import All to load changes from temp folder to Caché.
+10. Choose menu Clone.
+20. Enter repository URL.
+30. [If your TortoiseGit Version < 1.8.5] In appeared window TortoiseGit adds repository name to folder. You should delete it (Write c:\temp\git\user instead of c:\temp\git\user\reponame)
+40. Press 'OK'.
+50. Select menu Import All to load changes from temp folder to Caché.
 
 ###Work Cycle
 10. Choose menu item Pull.
