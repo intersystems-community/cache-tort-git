@@ -131,7 +131,7 @@ Returns root temp folder</Description>
 <FormalSpec>commandName:%String,itemName:%String=""</FormalSpec>
 <Implementation><![CDATA[
 ..GitBinPath()_" /command:"_commandName_
-               " /path:"_..TempFolder()_
+               " /path:"""_..TempFolder()_""""_
                $case(commandName,"clone":" /exactpath:"_..TempFolder(),:"")_
                $case(itemName,"":"",:..ExternalName(itemName))
 ]]></Implementation>
