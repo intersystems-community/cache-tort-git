@@ -8,6 +8,8 @@ Caché Git provides interface from Caché Studio to TortoiseGit. Caché Git supp
 ## Requirements
 You should install TorgoiseGit first (http://code.google.com/p/tortoisegit/). Then msysgit (http://msysgit.github.com/). Choose "Run Git from the Windows Command Prompt" option when installing.
 
+Caché Studio before 2011.1 cannot work with executables that have space in its name (like "c:\program files\tortoisegit\bin\tortoiseproc.exe"). In that case you should either install TortoiseGit in the folder without spaces or use newer version of Caché Studio. Caché Studio can work with previous version of Caché server. For example, Caché Studio 2013.1 can work with Caché 2009 (http://docs.intersystems.com/cache_latest/csp/docbook/DocBook.UI.Page.cls?KEY=ISP_interop)
+
 ## Installation in Caché:
 10. Enable write-access to CACHELIB namespace, it is required for csp-page with settings import.
 20. Import project in %SYS. Now you can disable write-access to CACHELIB.
@@ -52,7 +54,7 @@ Instead of your-git-server, your-git-login and your-git-password write actual va
 10. Choose menu item Pull.
 20. Resolve conflicts in TortoiseGit if any.
 30. Select menu Import All to load changes from temp folder to Caché.
-40. Dow some changes in Caché Studio.
+40. Do some changes in Caché Studio.
 45. [Optional] Select menu Export All if you want to force-unload changes to temp folder from Caché.
 50. Select Commit
 60. Select Push from Caché Studio menu or immediately after Commit.
