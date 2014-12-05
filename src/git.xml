@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2015.1 (Build 256U)" ts="2014-12-05 12:36:56">
 <Class name="%SourceControl.Git.Utils">
 <Abstract>1</Abstract>
 <IncludeCode>%occStatus</IncludeCode>
 <ProcedureBlock>1</ProcedureBlock>
+<TimeChanged>63526,44479.775752</TimeChanged>
 <TimeCreated>62657,53384.637236</TimeCreated>
 
 <Parameter name="Storage">
@@ -28,7 +29,7 @@ Otherwise calls are synchronous and import is automatically executed after git c
 </Parameter>
 
 <Parameter name="GitMenuItems">
-<Default>,%Settings,%Commit,%Pull,%Fetch,%Push,%Diff,%RepoStatus,%Resolve,%Revert,%Log,</Default>
+<Default>,%Settings,%Commit,%Pull,%Fetch,%Switch,%Merge,%Push,%Diff,%RepoStatus,%Resolve,%Revert,%Log,</Default>
 </Parameter>
 
 <Parameter name="ImportAfterGitMenuItems">
@@ -1063,6 +1064,7 @@ returns true if directory was deleted</Description>
 <Class name="%SourceControl.Git">
 <Import>%SourceControl.Git</Import>
 <Super>%Studio.Extension.Base</Super>
+<TimeChanged>63526,44468.921602</TimeChanged>
 <TimeCreated>62655,58027.787011</TimeCreated>
 
 <XData name="Menu">
@@ -1077,6 +1079,8 @@ returns true if directory was deleted</Description>
 <MenuItem Separator="true"/>
 <MenuItem Name="%Pull" Save = "001"/>
 <MenuItem Name="%Fetch" Save = "001"/>
+<MenuItem Name="%Switch" Save = "001"/>
+<MenuItem Name="%Merge" Save = "001"/>
 <MenuItem Name="%Push" Save = "001"/>
 <MenuItem Separator="true"/>
 <MenuItem Name="%Diff" Save = "001"/>
