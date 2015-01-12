@@ -77,9 +77,8 @@ Returns root temp folder</Description>
 <Method name="TempFolder">
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
-<Private>1</Private>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[..DefaultTemp()_$TR($znspace,"%")_"\"
+<Implementation><![CDATA[$G(@..#Storage@("settings","namespaceTemp"),..DefaultTemp()_$TR($znspace,"%")_"\")
 ]]></Implementation>
 </Method>
 
@@ -123,21 +122,33 @@ Returns root temp folder</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="AddSlash">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>path:%String</FormalSpec>
+<Private>1</Private>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	#dim slash As %String = "\"
+	if path'="" && ($E(path,*)'=slash) {
+        s path = path_slash
+    }
+    quit path
+]]></Implementation>
+</Method>
+
 <Method name="UpdateSettings">
 <ClassMethod>1</ClassMethod>
 <FormalSpec><![CDATA[&settings]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    #dim slash As %String = "\"
     
     // we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
     s @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
     
     // let's add slash in the end
-    if settings("defaultTemp")'="" && ($E(settings("defaultTemp"),*)'=slash) {
-        s settings("defaultTemp") = settings("defaultTemp")_slash
-    }
-    s @..InstallNamespaceStorage()@("%defaultTemp") = settings("defaultTemp")
+    s @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
+    
+    s @..#Storage@("settings","namespaceTemp") = ..AddSlash(settings("namespaceTemp"))
 ]]></Implementation>
 </Method>
 

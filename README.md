@@ -14,7 +14,7 @@ Caché Studio before 2011.1 cannot work with executables that have space in its 
 10. Enable write-access to CACHELIB namespace, it is required for csp-page with settings import.
 20. Import project in %SYS:
 
-    %SYS>do $system.OBJ.ImportDir("&lt;path-to-project&gt;","*.xml","ck",,1)
+    %SYS>do $system.OBJ.ImportDir("<path-to-project>","*.xml","ck",,1)
 
 25. Now you can disable write-access to CACHELIB.
 30. Select Version Control Class in Portal Management System. You should select %SourceControl.Git class.
@@ -23,7 +23,9 @@ Caché Studio before 2011.1 cannot work with executables that have space in its 
 Choose menu "Source Control > Settings"
 
 10. Enter full path to tortoiseproc.exe
-20. Enter temp folder (c:\temp usually). ATTENTION! This folder shouldn't contain anything valuable. There will be created subfolders for each Cache namespace.
+20. Enter default temp folder (c:\temp usually). ATTENTION! This folder shouldn't contain anything valuable. There will be created subfolders for each Cache namespace.
+30. You can also specify temp folder for this particular namespace. Otherwise temp folder for this namespace will be <default-temp-folder>\<namespace>
+
   * If you don't want to enter you credentials every time you use git create in temp folder file _netrc and add string `machine your-git-server login your-git-login password your-git-password`.
 Instead of your-git-server, your-git-login and your-git-password write actual values.
 
@@ -66,7 +68,8 @@ Instead of your-git-server, your-git-login and your-git-password write actual va
 ###Global's structure
 Data used by Caché-Git is stored in global which name is defined by Storage parameter of %SourceControl.Git.Utils class. Its value by default — ^Git.
 Options (path to tortoiseproc.exe and temp folder) are stored in %SYS namespace in nodes ^Git("%gitBinPath") and ^Git("%defaultTemp").
+In each namespace we also store path to temp folder for this namespace that can override default path. Global ref is ^Git("settings","namespaceTemp")
 
-In ^Git(“items”) node namespace elements are stored that traced by Caché-Git.
+In ^Git("items") node namespace elements are stored that traced by Caché-Git.
 
-In ^Git(“TSH”) node timestamps of last synchronization for each routine are stored.
+In ^Git("TSH") node timestamps of last synchronization for each routine are stored.
