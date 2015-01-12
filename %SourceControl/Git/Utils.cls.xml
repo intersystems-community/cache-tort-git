@@ -775,7 +775,18 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #define DoNotLoad 1
-    $$$QuitOnError($system.OBJ.ImportDir(..TempFolder(),"*.xml","-d",.err,1, .itemList, $$$DoNotLoad))
+    set res = $system.OBJ.ImportDir(..TempFolder(),"*.xml","-d",.err,1, .itemList, $$$DoNotLoad)
+    
+    if '$Data(itemList) && $$$ISERR(res) {
+	    quit res
+    }
+    
+    if $Data(err) {
+	    write "There were some errors while importing files",!
+	    for i=1:1:err {
+		    write err(i),!
+	    }
+    }
     
     //change all csp/ names to /csp/ names
     #dim item As %String = "csp"
