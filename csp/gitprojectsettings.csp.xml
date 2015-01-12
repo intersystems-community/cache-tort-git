@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<CSP name="gitprojectsettings.csp" application="/csp/sys/" default="1"><![CDATA[
+<html>
+<head>
+<title>Cache-Git Settings</title></head>
+<STYLE type='text/css'>
+.error {
+    color: red;
+}
+</STYLE>
+<body>
+<server>
+ if $D(%request.Data("gitsettings",1)) {
+     k settings
+     for param="gitBinPath","defaultTemp"{
+         s settings(param) = $G(%request.Data(param,1))
+     } 
+     d ##class(%SourceControl.Git.Utils).UpdateSettings(.settings)
+ }
+ s gitBinPath = ##class(%SourceControl.Git.Utils).GitBinPath()
+ s defaultTemp = ##class(%SourceControl.Git.Utils).DefaultTemp()
+ s:defaultTemp="" defaultTemp =  "c:\temp\"
+</server>
+<form method='post'>
+<input type="hidden" name="gitsettings" value="1" />
+<h1>Settings</h1>
+<table><tr>
+<td>Path to tortoisegitproc.exe<br/>(e.g. c:\tortoisegit\bin\tortoisegitproc.exe)</td><td><input type="text" name="gitBinPath" size=40 value='#(..EscapeHTML(gitBinPath))#'/></td>
+</tr>
+<csp:if condition='$D(%request.Data("gitsettings",1)) && (##class(%SourceControl.Git.Utils).GitBinExists()=0)'>
+<tr><td colspan='2' align=center class='error'>
+file does not found
+</td></tr>
+</csp:if>
+<tr>
+<td>Path to temp folder<br/>(e.g. c:\temp)</td><td><input type="text" name="defaultTemp" size=40 value='#(..EscapeHTML(defaultTemp))#'/></td>
+</tr>
+
+</table>
+<input type='submit' value = 'Save!'/>
+</form>
+<csp:if condition='$D(%request.Data("gitsettings",1)) && (##class(%SourceControl.Git.Utils).NeedSettings() = 0)'>
+    <em>Click cross in the upper-right corner to close the settings window.</em>
+</csp:if>
+</body>
+</html>]]></CSP>
+</Export>

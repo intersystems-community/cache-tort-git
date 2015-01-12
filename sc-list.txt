@@ -1,0 +1,2 @@
+%SourceControl.PKG
+<cspapp>/gitprojectsettings.csp
