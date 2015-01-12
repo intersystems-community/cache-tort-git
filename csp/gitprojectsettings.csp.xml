@@ -12,6 +12,8 @@
 <body>
 <server>
  set namespace = %request.Data("NSpace",1)
+ set oldNS=$znspace
+ zn namespace
  if $D(%request.Data("gitsettings",1)) {
      k settings
      for param="gitBinPath","defaultTemp","namespaceTemp" {
@@ -21,8 +23,6 @@
  }
  s gitBinPath = ##class(%SourceControl.Git.Utils).GitBinPath()
  s defaultTemp = ##class(%SourceControl.Git.Utils).DefaultTemp()
- set oldNS=$znspace
- zn namespace
  s namespaceTemp = ##class(%SourceControl.Git.Utils).TempFolder()
  zn oldNS
  s:defaultTemp="" defaultTemp =  "c:\temp\"
