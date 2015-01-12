@@ -14,7 +14,7 @@ Caché Studio before 2011.1 cannot work with executables that have space in its 
 10. Enable write-access to CACHELIB namespace, it is required for csp-page with settings import.
 20. Import project in %SYS:
 
-    %SYS>do $system.OBJ.ImportDir("<path-to-project>","*.xml","ck",,1)
+    %SYS>do $system.OBJ.ImportDir("c:\path\to\project","*.xml","ck",,1)
 
 25. Now you can disable write-access to CACHELIB.
 30. Select Version Control Class in Portal Management System. You should select %SourceControl.Git class.
