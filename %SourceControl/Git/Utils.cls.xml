@@ -792,7 +792,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 	    quit res
     }
     
-    if $Data(err) {
+    if $Get(err) > 0 {
 	    write "There were some errors while importing files",!
 	    for i=1:1:err {
 		    write err(i),!
