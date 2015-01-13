@@ -223,7 +223,7 @@ Returns root temp folder</Description>
         }elseif (menuItemName = "%Export") {
             s ec = ..ExportAll()
             if ec {
-                w "Экспорт программ выполнен",!
+                w "Program export is done",!
             }
         }elseif (menuItemName = "%Import") {
             s ec = ..ImportAll()
@@ -266,7 +266,7 @@ Returns root temp folder</Description>
             if (..#IsSYNC = 1) {
                 s ec = ..ImportAll()
             } else {
-                w "Chose Import All menu after work with Git!", !
+                w "Choose Import All menu after work with Git!", !
             }
     }
 
