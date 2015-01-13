@@ -29,6 +29,8 @@
 <MenuItem Separator="true"/>
 <MenuItem Name="%Export" Save = "001" />
 <MenuItem Name="%Import" Save = "001" />
+<MenuItem Separator="true"/>
+<MenuItem Name="%OpenRepoFolder" Save = "001" />
 </Menu>
 <Menu Name="%SourceMenuContext" Type="1">
 <MenuItem Name="%AddToSC"/>
@@ -80,7 +82,10 @@
 			s DisplayName = "Import All"
 		} elseif name = "%RepoStatus" {
 			s DisplayName = "Check for modifications"
-		}elseif ##class(Utils).IsMenuGitCommand(name) {
+		}elseif name = "%OpenRepoFolder" {
+			s DisplayName = "Open Repo Folder"
+		}
+		elseif ##class(Utils).IsMenuGitCommand(name) {
 			s DisplayName = $E(name, 2, *)
 		} 
 		else {

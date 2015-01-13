@@ -238,7 +238,10 @@ Returns root temp folder</Description>
             } else {
                 s ec = ..MakeError("Unable to create folder "_..TempFolder())
             }
-        }elseif ..IsMenuGitCommand(menuItemName) {
+        }elseif (menuItemName = "%OpenRepoFolder") {
+	        s Action = 3
+	        s Target = ..TempFolder()
+    	}elseif ..IsMenuGitCommand(menuItemName) {
                 s Action = 3
                 #dim command As %String = $ZCVT($E(menuItemName, 2, *), "L")
                 s Target = ..GitCommand(command)
