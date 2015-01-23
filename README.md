@@ -10,6 +10,8 @@ You should install TorgoiseGit first (http://code.google.com/p/tortoisegit/). Th
 
 Caché Studio before 2011.1 cannot work with executables that have space in its name (like "c:\program files\tortoisegit\bin\tortoiseproc.exe"). In that case you should either install TortoiseGit in the folder without spaces or use newer version of Caché Studio. Caché Studio can work with previous version of Caché server. For example, Caché Studio 2013.1 can work with Caché 2009 (http://docs.intersystems.com/cache_latest/csp/docbook/DocBook.UI.Page.cls?KEY=ISP_interop)
 
+_On *Nix systems Caché Git provides only Export/Import without calling TortoiseGit._
+
 ## Installation in Caché:
 10. Enable write-access to CACHELIB namespace, it is required for csp-page with settings import.
 20. Import project in %SYS:
