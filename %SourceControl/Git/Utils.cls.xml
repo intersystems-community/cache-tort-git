@@ -14,6 +14,10 @@
 <Default>%SYS</Default>
 </Parameter>
 
+<Parameter name="Slash">
+<Expression>$case($system.Version.GetOS(),"Windows":"\",:"/")</Expression>
+</Parameter>
+
 <Parameter name="SCListFilename">
 <Description>
 Name of the file with version controlled items</Description>
@@ -78,22 +82,22 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[$G(@..#Storage@("settings","namespaceTemp"),..DefaultTemp()_$TR($znspace,"%")_"\")
+<Implementation><![CDATA[$G(@..#Storage@("settings","namespaceTemp"),..DefaultTemp()_$TR($znspace,"%")_..#Slash)
 ]]></Implementation>
 </Method>
 
-<UDLText name="T">
-<Content><![CDATA[
-// we strip quotes
-
-]]></Content>
-</UDLText>
-
 <Method name="GitBinExists">
 <ClassMethod>1</ClassMethod>
-<CodeMode>expression</CodeMode>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[##class(%File).Exists($E(..GitBinPath(),2,*-1))
+<Implementation><![CDATA[
+	#if $system.Version.GetOS()'="Windows" 
+	 quit 0
+	#else 
+	if '$D(^||GitBinExists) {
+		set ^||GitBinExists = ##class(%File).Exists($E(..GitBinPath(),2,*-1))
+	}
+	quit ^||GitBinExists
+	#endif
 ]]></Implementation>
 </Method>
 
@@ -110,7 +114,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[(..DefaultTemp() = "") ||  (..GitBinPath() = "")
+<Implementation><![CDATA[(..DefaultTemp() = "") ||  (..GitBinPath() = "") ||  (..GitBinPath() = """")
 ]]></Implementation>
 </Method>
 
@@ -128,9 +132,8 @@ Returns root temp folder</Description>
 <Private>1</Private>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-	#dim slash As %String = "\"
-	if path'="" && ($E(path,*)'=slash) {
-        s path = path_slash
+	if path'="" && ($E(path,*)'=..#Slash) {
+        s path = path_..#Slash
     }
     quit path
 ]]></Implementation>
@@ -144,6 +147,7 @@ Returns root temp folder</Description>
     
     // we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
     s @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
+    kill ^||GitBinExists
     
     // let's add slash in the end
     s @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
@@ -201,7 +205,8 @@ Returns root temp folder</Description>
     #dim menuItemName As %String = $piece(MenuName,",",2)
     #dim ec As %Status = $$$OK
     
-    if ..GitBinExists() = 0 && (menuItemName'="%Cache-Git-Settings") {
+    if ..GitBinExists() = 0 && (menuItemName'="%Cache-Git-Settings") && 
+    		($system.Version.GetOS()="Windows") {
         w !!,"===Path to tortoisegitproc.exe not found: "_..GitBinPath()_"!===",!
     }
     
@@ -295,8 +300,7 @@ Returns root temp folder</Description>
 <FormalSpec>name:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    #define BACKSLASH "\"
-    s name = $TR(name,"/", $$$BACKSLASH)
+    set name = $TR(name, "/", ..#Slash)
 
     // lower case for extensions
     #dim extension As %String = $ZCVT($P(name,".",$L(name,".")),"L")
@@ -304,15 +308,15 @@ Returns root temp folder</Description>
     
     // we shall put classes in different folders
     if extension = "cls" {
-        s name = $TR( $P(name,".", 1, $L(name,".")-1), ".", $$$BACKSLASH)_".cls"
+        s name = $TR( $P(name,".", 1, $L(name,".")-1), ".", ..#Slash)_".cls"
     }
     
     // we shall delete csp-app from csp files
-    if $E(name, 1) = $$$BACKSLASH {
+    if $E(name, 1) = ..#Slash {
         s $E(name, 1) = ""
     }
-    if $P(name, $$$BACKSLASH, 1) = "csp" {
-        s $P(name, $$$BACKSLASH, 1, 2) = "csp"
+    if $P(name, ..#Slash, 1) = "csp" {
+        s $P(name, ..#Slash, 1, 2) = "csp"
     }
 
     q $TR(name," *?","___")_".xml"

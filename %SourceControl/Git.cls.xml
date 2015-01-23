@@ -65,7 +65,7 @@
 		s DisplayName = "Settings"
 		q $$$OK
 	} 
-	if name = "%Settings" {
+	if name = "%Settings" && ##class(Utils).GitBinExists() {
 		s DisplayName = "TortoiseGit Settings"
 		q $$$OK
 	}
@@ -74,24 +74,23 @@
 		s Enabled = -1
 		q $$$OK
 	}
-	
 	if ##class(Utils).IsNamespaceInGit() {
 		if name = "%Export" {
 			s DisplayName = "Export All"
 		} elseif name = "%Import" {
 			s DisplayName = "Import All"
-		} elseif name = "%RepoStatus" {
+		} elseif name = "%RepoStatus" && ##class(Utils).GitBinExists() {
 			s DisplayName = "Check for modifications"
 		}elseif name = "%OpenRepoFolder" {
 			s DisplayName = "Open Repo Folder"
 		}
-		elseif ##class(Utils).IsMenuGitCommand(name) {
+		elseif ##class(Utils).IsMenuGitCommand(name) && ##class(Utils).GitBinExists() {
 			s DisplayName = $E(name, 2, *)
 		} 
 		else {
 			s Enabled = -1
 		}
-	} else { 
+	} elseif ##class(Utils).GitBinExists() { 
 		if name = "%CreateRepo" {
 			s DisplayName = "Create Repo"
 		} elseif name = "%Clone" {
@@ -99,6 +98,8 @@
 		} else {
 			s Enabled = -1
 		}
+	} else {
+		s Enabled = -1 
 	}
 	q $$$OK
 ]]></Implementation>
