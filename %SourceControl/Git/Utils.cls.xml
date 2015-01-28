@@ -1063,7 +1063,7 @@ returns true if directory was deleted</Description>
 <FormalSpec>path:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
 <Implementation><![CDATA[
-    #dim rs As %Status = ##class(%ResultSet).%New("%File:FileSet")
+    #dim rs As %ResultSet = ##class(%ResultSet).%New("%File:FileSet")
     #define DirsFirst 1
     $$$QuitOnError(rs.Execute(path,,,$$$DirsFirst))
     #dim fileCount As %Integer = 0
