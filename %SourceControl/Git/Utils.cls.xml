@@ -162,9 +162,9 @@ Returns root temp folder</Description>
 <FormalSpec>commandName:%String,itemName:%String=""</FormalSpec>
 <Implementation><![CDATA[
 ..GitBinPath()_" /command:"_commandName_
-               " /path:"""_..TempFolder()_""""_
-               $case(commandName,"clone":" /exactpath:"_..TempFolder(),:"")_
-               $case(itemName,"":"",:..ExternalName(itemName))
+               " /path:"""_..TempFolder()_
+               $case(itemName,"":"",:..ExternalName(itemName))_""""_
+               $case(commandName,"clone":" /exactpath:"_..TempFolder(),:"")
 ]]></Implementation>
 </Method>
 
@@ -274,7 +274,7 @@ Returns root temp folder</Description>
                 w "Choose Import All menu after work with Git!", !
             }
     }
-
+    w Target,!
     q ec
 ]]></Implementation>
 </Method>
