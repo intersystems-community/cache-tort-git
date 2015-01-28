@@ -274,7 +274,7 @@ Returns root temp folder</Description>
                 w "Choose Import All menu after work with Git!", !
             }
     }
-    w Target,!
+    //w Target,!
     q ec
 ]]></Implementation>
 </Method>
