@@ -93,10 +93,10 @@ Returns root temp folder</Description>
 	#if $system.Version.GetOS()'="Windows" 
 	 quit 0
 	#else 
-	if '$D(^||GitBinExists) {
-		set ^||GitBinExists = ##class(%File).Exists($E(..GitBinPath(),2,*-1))
+	if '$D(@..InstallNamespaceStorage()@("%gitBinExists")) {
+		set @..InstallNamespaceStorage()@("%gitBinExists") = ##class(%File).Exists($E(..GitBinPath(),2,*-1))
 	}
-	quit ^||GitBinExists
+	quit @..InstallNamespaceStorage()@("%gitBinExists")
 	#endif
 ]]></Implementation>
 </Method>
@@ -147,7 +147,7 @@ Returns root temp folder</Description>
     
     // we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
     s @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
-    kill ^||GitBinExists
+    kill @..InstallNamespaceStorage()@("%gitBinExists")
     
     // let's add slash in the end
     s @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
