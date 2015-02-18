@@ -57,7 +57,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[$G(@..InstallNamespaceStorage()@("%defaultTemp"))
+<Implementation><![CDATA[$G(@..InstallNamespaceStorage()@("%defaultTemp"), "c:\temp\")
 ]]></Implementation>
 </Method>
 
