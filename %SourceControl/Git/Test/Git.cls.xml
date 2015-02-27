@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="%SourceControl.Git.Test.Git">
+<Abstract>1</Abstract>
+<TimeCreated>63607,51454.905525</TimeCreated>
+
+<Method name="runall">
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	Set ^UnitTestRoot = $G(^UnitTestRoot,"C:\UnitTests")
+    set tortgitRoot = ^UnitTestRoot_"\tortgit\"
+    d ##class(%File).CreateDirectoryChain(tortgitRoot)
+    try {
+	    #dim sc As %Library.Status
+	    $$$TOE(sc,$system.OBJ.Export("%SourceControl.Git.Test.AddRemove.CLS",tortgitRoot_"AddRemove.xml"))
+	    
+	    $$$TOE(sc,##class(%UnitTest.Manager).RunTestSuites("tortgit", "/noload/nodelete",""))
+    }catch ex {
+	   #dim ex As %Exception.StatusException
+	   w ex.DisplayString(),!
+    }
+]]></Implementation>
+</Method>
+</Class>
+</Export>

@@ -70,8 +70,8 @@ Instead of your-git-server, your-git-login and your-git-password write actual va
 ###Global's structure
 Data used by Caché-Git is stored in global which name is defined by Storage parameter of %SourceControl.Git.Utils class. Its value by default — ^Git.
 Options (path to tortoiseproc.exe and temp folder) are stored in %SYS namespace in nodes ^Git("%gitBinPath") and ^Git("%defaultTemp").
-In each namespace we also store path to temp folder for this namespace that can override default path. Global ref is ^Git("settings","namespaceTemp")
+In each namespace we also store path to temp folder for this namespace that can override default path. Global name is ^Git("settings","namespaceTemp")
 
-In ^Git("items") node namespace elements are stored that traced by Caché-Git.
+In ^Git("items") node namespace elements are stored that traced by Caché-Git. We store names of particular items with extension in lower-case.
 
 In ^Git("TSH") node timestamps of last synchronization for each routine are stored.

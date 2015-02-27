@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="%SourceControl.Git.Test.AddRemove">
+<Import>%SourceControl.Git</Import>
+<Super>%UnitTest.TestCase</Super>
+<TimeCreated>63607,51627.861648</TimeCreated>
+
+<Method name="TestMac">
+<Implementation><![CDATA[
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),0)
+	do $$$AssertStatusOK(##class(Utils).AddToSourceControl("test.mac"))
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),1)
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.MAC"),1)
+	do $$$AssertStatusOK(##class(Utils).RemoveFromSourceControl("test.mac"))
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),0)
+]]></Implementation>
+</Method>
+
+<Method name="TestMACInUpperCase">
+<Implementation><![CDATA[
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),0)
+	do $$$AssertStatusOK(##class(Utils).AddToSourceControl("test.MAC"))
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),1)
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.MAC"),1)
+	do $$$AssertStatusOK(##class(Utils).RemoveFromSourceControl("test.mac"))
+	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),0)
+]]></Implementation>
+</Method>
+</Class>
+</Export>
