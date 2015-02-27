@@ -75,3 +75,8 @@ In each namespace we also store path to temp folder for this namespace that can 
 In ^Git("items") node namespace elements are stored that traced by Caché-Git. We store names of particular items with extension in lower-case.
 
 In ^Git("TSH") node timestamps of last synchronization for each routine are stored.
+
+To run all tests:
+    
+	%SYS>do ##class(%SourceControl.Git.Test.Git).runall()
+	
