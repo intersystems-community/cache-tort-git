@@ -252,6 +252,11 @@ Returns root temp folder</Description>
                 s Target = ..GitCommand(command)
         }
     }elseif (menuName = "%SourceMenuContext") {
+	    
+	    if (..Type(InternalName) = "csp") && ($E(InternalName,1) '= "/") {
+	        set InternalName = "/" _ InternalName
+        }
+        
         if (menuItemName = "%AddToSC") {
             s ec = ..AddToSourceControl(InternalName)
         }elseif (menuItemName = "%RemoveFromSC") {
@@ -432,10 +437,12 @@ csp -- csp-page or csp-folder. See <Method>IsCspFolder</Method>]]></Description>
     #dim extension As %String = $ZCVT($P(InternalName,".",$L(InternalName,".")),"L")
     #dim type As %String = extension
     
-    if $E(InternalName, 1, 4) = "/csp" {
+    if ($E(InternalName, 1, 4) = "/csp") 
+          || ($F(InternalName,".") = 0) 
+          || ($F(InternalName,"/") > 0) {
         s type ="csp"
     }
-
+   
     q type
 ]]></Implementation>
 </Method>
@@ -614,6 +621,9 @@ projectName without extension</Description>
         if type = "cls" {
             s isInSourceControl = ..FindInPackages(InternalName, .sourceControlItem)
         } elseif type = "csp" {
+	        if $E(InternalName) '= "/" {
+		        s InternalName = "/" _ InternalName
+	        }
             s isInSourceControl = ..FindInCspFolders(InternalName, .sourceControlItem)
         }
         
