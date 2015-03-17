@@ -781,8 +781,8 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     #dim fileTSH = ##class(%File).GetFileDateModified(filename)
     #dim sc As %Status = $$$OK
 
-    if ..IsRoutineOutdated(InternalName) {
-        s sc = $system.OBJ.Load(filename,"-l-d")
+    if ##class(%File).Exists(filename) && ..IsRoutineOutdated(InternalName) {
+        s sc = $SYSTEM.OBJ.Load(filename,"-l-d")
         if sc {
             s sc = ..UpdateRoutineTSH(InternalName, fileTSH)
             if ..Type(InternalName) = "prj" {
