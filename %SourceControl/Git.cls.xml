@@ -159,7 +159,7 @@ to load the item from an external format.</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	if ##class(Utils).IsInSourceControl(InternalName) {
+	if ##class(%File).Exists(InternalName) && ##class(Utils).IsInSourceControl(InternalName) {
 		q ##class(Utils).LoadIfOutdated(InternalName)
 	}
 	q $$$OK
