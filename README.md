@@ -29,7 +29,7 @@ In Studio, in any namespce with %SourceControl.Git as a Version Control Class ch
 30. You can also specify temp folder for this particular namespace. Otherwise temp folder for this namespace will be &lt;default-temp-folder>\\&lt;namespace>
 
   * If you don't want to enter you credentials every time you use git create in temp folder file _netrc and add string `machine your-git-server login your-git-login password your-git-password`.
-Instead of your-git-server, your-git-login and your-git-password write actual values. Or use [Git Credentials](http://stackoverflow.com/a/15351702)
+Instead of your-git-server, your-git-login and your-git-password write actual values. Or use [Git Credentials](http://stackoverflow.com/a/15351702).
 
 
 ##How to work with plug-in
