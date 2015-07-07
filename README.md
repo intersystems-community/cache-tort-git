@@ -22,7 +22,7 @@ _On *Nix systems Caché Git provides only Export/Import without calling Tortoise
 30. Select Version Control Class in System Management Portal for desired namespace. You should select %SourceControl.Git class.
 
 ## Setup
-Choose menu "Source Control > Settings"
+In Studio, in any namespce with %SourceControl.Git as a Version Control Class choose menu "Git > Settings"
 
 10. Enter full path to tortoiseproc.exe
 20. Enter default temp folder (c:\temp usually). ATTENTION! This folder shouldn't contain anything valuable. There will be created subfolders for each Cache namespace.
