@@ -6,14 +6,14 @@ Source Version Control plug-in for Caché Studio. Caché Git allows working with
 Caché Git provides interface from Caché Studio to TortoiseGit. Caché Git supports one repository for each Caché namespace. User chooses files to include in version control.
 
 ## Requirements
-You should install TorgoiseGit first (http://code.google.com/p/tortoisegit/). Then msysgit (http://msysgit.github.com/). Choose "Run Git from the Windows Command Prompt" option when installing.
+You should install [TorgoiseGit](http://code.google.com/p/tortoisegit/) first. Then [msysgit](http://msysgit.github.com/). Choose "Run Git from the Windows Command Prompt" option when installing.
 
-Caché Studio before 2011.1 cannot work with executables that have space in its name (like "C:\Program Files\TortoiseGit\bin\TortoiseGitProc.exe"). In that case you should either install TortoiseGit in the folder without spaces or use newer version of Caché Studio. Caché Studio can work with previous version of Caché server. For example, Caché Studio 2013.1 can work with Caché 2009 (http://docs.intersystems.com/cache_latest/csp/docbook/DocBook.UI.Page.cls?KEY=ISP_interop)
+Caché Studio before 2011.1 cannot work with executables that have space in its name (like "C:\Program Files\TortoiseGit\bin\TortoiseGitProc.exe"). In that case you should either install TortoiseGit in the folder without spaces or use newer version of Caché Studio. Caché Studio can work with previous version of Caché server. For example, Caché Studio 2013.1 [can](http://docs.intersystems.com/cache_latest/csp/docbook/DocBook.UI.Page.cls?KEY=ISP_interop) work with Caché 2009.
 
 _On *Nix systems Caché Git provides only Export/Import without calling TortoiseGit._
 
 ## Installation in Caché:
-10. Enable write-access to CACHELIB namespace, it is required for csp-page with settings import.
+10. Enable [write-access](http://docs.intersystems.com/ens20151/csp/docbook/DocBook.UI.Page.cls?KEY=GSA_config#GSA_config_database_edit) to CACHELIB namespace, it is required for csp-page with settings import.
 20. Import project in %SYS:
 
     %SYS>do $system.OBJ.ImportDir("c:\path\to\project","*.xml","ck",,1)
