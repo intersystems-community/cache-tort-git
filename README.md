@@ -19,7 +19,7 @@ _On *Nix systems Caché Git provides only Export/Import without calling Tortoise
     %SYS>do $system.OBJ.ImportDir("c:\path\to\project","*.xml","ck",,1)
 
 25. Now you can disable write-access to CACHELIB.
-30. Select Version Control Class in Portal Management System. You should select %SourceControl.Git class.
+30. Select Version Control Class in System Management Portal for desired namespace. You should select %SourceControl.Git class.
 
 ## Setup
 Choose menu "Source Control > Settings"
