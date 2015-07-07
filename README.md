@@ -24,12 +24,12 @@ _On *Nix systems Caché Git provides only Export/Import without calling Tortoise
 ## Setup
 In Studio, in any namespce with %SourceControl.Git as a Version Control Class choose menu "Git > Settings"
 
-10. Enter full path to tortoiseproc.exe
-20. Enter default temp folder (c:\temp usually). ATTENTION! This folder shouldn't contain anything valuable. There will be created subfolders for each Cache namespace.
+10. Enter full path to TortoiseGitProc.exe (usually "C:\Program Files\TortoiseGit\bin\TortoiseGitProc.exe")
+20. Enter default temp folder (usually "C:\Temp"). ATTENTION! This folder shouldn't contain anything valuable. There will be subfolders for each Caché  namespace.
 30. You can also specify temp folder for this particular namespace. Otherwise temp folder for this namespace will be &lt;default-temp-folder>\\&lt;namespace>
 
   * If you don't want to enter you credentials every time you use git create in temp folder file _netrc and add string `machine your-git-server login your-git-login password your-git-password`.
-Instead of your-git-server, your-git-login and your-git-password write actual values.
+Instead of your-git-server, your-git-login and your-git-password write actual values. Or use [Git Credentials](http://stackoverflow.com/a/15351702)
 
 
 ##How to work with plug-in
