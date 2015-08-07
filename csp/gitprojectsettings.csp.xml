@@ -13,19 +13,19 @@
 <server>
  set namespace = %request.Data("NSpace",1)
  set oldNS=$znspace
- zn namespace
- if $D(%request.Data("gitsettings",1)) {
-     k settings
+ znspace namespace
+ if $Data(%request.Data("gitsettings",1)) {
+     kill settings
      for param="gitBinPath","defaultTemp","namespaceTemp" {
-         s settings(param) = $G(%request.Data(param,1))
+         set settings(param) = $Get(%request.Data(param,1))
      } 
-     d ##class(%SourceControl.Git.Utils).UpdateSettings(.settings)
+     do ##class(%SourceControl.Git.Utils).UpdateSettings(.settings)
  }
- s gitBinPath = ##class(%SourceControl.Git.Utils).GitBinPath()
- s defaultTemp = ##class(%SourceControl.Git.Utils).DefaultTemp()
- s namespaceTemp = ##class(%SourceControl.Git.Utils).TempFolder()
- zn oldNS
- s:defaultTemp="" defaultTemp =  "c:\temp\"
+ set gitBinPath = ##class(%SourceControl.Git.Utils).GitBinPath()
+ set defaultTemp = ##class(%SourceControl.Git.Utils).DefaultTemp()
+ set namespaceTemp = ##class(%SourceControl.Git.Utils).TempFolder()
+ znspace oldNS
+ set:defaultTemp="" defaultTemp =  "c:\temp\"
  
 </server>
 <form method='post'>

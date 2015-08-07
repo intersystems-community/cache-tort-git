@@ -49,10 +49,10 @@
 	#dim ec As %Status = $$$OK
 	#dim menu As %Status = $Piece(Name, ",", 1)
 	if menu '= "%SourceMenu", menu'="%SourceMenuContext" {
-		q $$$OK
+		quit $$$OK
 	}
-	s ec = ##class(Utils).UserAction(InternalName, Name, .Target, .Action, .Reload)
-	q ec
+	set ec = ##class(Utils).UserAction(InternalName, Name, .Target, .Action, .Reload)
+	quit ec
 ]]></Implementation>
 </Method>
 
@@ -62,46 +62,46 @@
 <Implementation><![CDATA[
 	if name = "%Cache-Git-Settings" {
 		// We always show Settings
-		s DisplayName = "Settings"
-		q $$$OK
+		set DisplayName = "Settings"
+		quit $$$OK
 	} 
 	if name = "%Settings" && ##class(Utils).GitBinExists() {
-		s DisplayName = "TortoiseGit Settings"
-		q $$$OK
+		set DisplayName = "TortoiseGit Settings"
+		quit $$$OK
 	}
 	
 	if ##class(Utils).NeedSettings() {
-		s Enabled = -1
-		q $$$OK
+		set Enabled = -1
+		quit $$$OK
 	}
 	if ##class(Utils).IsNamespaceInGit() {
 		if name = "%Export" {
-			s DisplayName = "Export All"
+			set DisplayName = "Export All"
 		} elseif name = "%Import" {
-			s DisplayName = "Import All"
+			set DisplayName = "Import All"
 		} elseif name = "%RepoStatus" && ##class(Utils).GitBinExists() {
-			s DisplayName = "Check for modifications"
+			set DisplayName = "Check for modifications"
 		}elseif name = "%OpenRepoFolder" {
-			s DisplayName = "Open Repo Folder"
+			set DisplayName = "Open Repo Folder"
 		}
 		elseif ##class(Utils).IsMenuGitCommand(name) && ##class(Utils).GitBinExists() {
-			s DisplayName = $E(name, 2, *)
+			set DisplayName = $Extract(name, 2, *)
 		} 
 		else {
-			s Enabled = -1
+			set Enabled = -1
 		}
 	} elseif ##class(Utils).GitBinExists() { 
 		if name = "%CreateRepo" {
-			s DisplayName = "Create Repo"
+			set DisplayName = "Create Repo"
 		} elseif name = "%Clone" {
-			s DisplayName = "Clone"
+			set DisplayName = "Clone"
 		} else {
-			s Enabled = -1
+			set Enabled = -1
 		}
 	} else {
-		s Enabled = -1 
+		set Enabled = -1 
 	}
-	q $$$OK
+	quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -109,17 +109,17 @@
 <FormalSpec><![CDATA[itemName:%String,menuItemName:%String,&Enabled:%String,&DisplayName:%String]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	s:menuItemName="%AddToSC" DisplayName = "Add to SourceControl"
-	s:menuItemName="%RemoveFromSC" DisplayName = "Remove from SourceControl"
+	set:menuItemName="%AddToSC" DisplayName = "Add to SourceControl"
+	set:menuItemName="%RemoveFromSC" DisplayName = "Remove from SourceControl"
 	
 	if (itemName = "") || '##class(Utils).IsNamespaceInGit() {
-		s Enabled = -1
+		set Enabled = -1
 	}elseif ##class(Utils).IsInSourceControl(itemName) {
-		s Enabled = $case(menuItemName, "%AddToSC":-1,:1)
+		set Enabled = $Case(menuItemName, "%AddToSC":-1,:1)
 	} else {
-		s Enabled = $case(menuItemName, "%AddToSC":1,:-1)
+		set Enabled = $Case(menuItemName, "%AddToSC":1,:-1)
 	}
-	q $$$OK
+	quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -133,20 +133,20 @@ this menu item from the list totally, 0 will gray the menu item out and the defa
 <FormalSpec><![CDATA[MenuName:%String,InternalName:%String,SelectedText:%String,&Enabled:%Boolean,&DisplayName:%String]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	#dim menu As %String= $piece(MenuName,",")
-	#dim name As %String = $piece(MenuName,",",2)
+	#dim menu As %String= $Piece(MenuName,",")
+	#dim name As %String = $Piece(MenuName,",",2)
 	if menu = "%SourceMenuContext", name = "" {
-		s DisplayName = "Git"
+		set DisplayName = "Git"
 	}
 	if menu = "%SourceMenu", name = "" {
-		s DisplayName = "Git"
+		set DisplayName = "Git"
 	}
 	#dim ec As %Status = $$$OK
 
 	if menu = "%SourceMenu" {
-		s ec = ..OnSourceMenuItem(name, .Enabled, .DisplayName)
+		set ec = ..OnSourceMenuItem(name, .Enabled, .DisplayName)
 	}elseif menu = "%SourceMenuContext" {
-		s ec = ..OnSourceMenuContextItem(InternalName, name, .Enabled, .DisplayName)
+		set ec = ..OnSourceMenuContextItem(InternalName, name, .Enabled, .DisplayName)
 	}
 	Quit ec
 ]]></Implementation>
@@ -160,9 +160,9 @@ to load the item from an external format.</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	if ##class(Utils).IsInSourceControl(InternalName) {
-		q ##class(Utils).LoadIfOutdated(InternalName)
+		quit ##class(Utils).LoadIfOutdated(InternalName)
 	}
-	q $$$OK
+	quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -176,9 +176,9 @@ just saved. It can be use to export this documement to an external form for exam
 <Implementation><![CDATA[
 	if ##class(Utils).IsNamespaceInGit() && ..IsInSourceControl(InternalName) {
 		$$$QuitOnError(##class(Utils).RemoveRoutineTSH(InternalName))
-		q ##class(Utils).ExportItem(InternalName)
+		quit ##class(Utils).ExportItem(InternalName)
 	} else {
-		q $$$OK
+		quit $$$OK
 	}
 ]]></Implementation>
 </Method>
@@ -209,9 +209,9 @@ Called after an item is deleted.</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	if ##class(Utils).IsInSourceControl(InternalName) {
-		q ##class(Utils).DeleteExternalFile(InternalName)
+		quit ##class(Utils).DeleteExternalFile(InternalName)
 	}
-	q $$$OK
+	quit $$$OK
 ]]></Implementation>
 </Method>
 </Class>

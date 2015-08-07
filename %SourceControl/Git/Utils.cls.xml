@@ -57,7 +57,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[$G(@..InstallNamespaceStorage()@("%defaultTemp"), "c:\temp\")
+<Implementation><![CDATA[$Get(@..InstallNamespaceStorage()@("%defaultTemp"), "c:\temp\")
 ]]></Implementation>
 </Method>
 
@@ -82,7 +82,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[$G(@..#Storage@("settings","namespaceTemp"),..DefaultTemp()_$TR($znspace,"%")_..#Slash)
+<Implementation><![CDATA[$Get(@..#Storage@("settings","namespaceTemp"),..DefaultTemp()_$Translate($znspace,"%")_..#Slash)
 ]]></Implementation>
 </Method>
 
@@ -93,8 +93,8 @@ Returns root temp folder</Description>
 	#if $system.Version.GetOS()'="Windows" 
 	 quit 0
 	#else 
-	if '$D(@..InstallNamespaceStorage()@("%gitBinExists")) {
-		set @..InstallNamespaceStorage()@("%gitBinExists") = ##class(%File).Exists($E(..GitBinPath(),2,*-1))
+	if '$Data(@..InstallNamespaceStorage()@("%gitBinExists")) {
+		set @..InstallNamespaceStorage()@("%gitBinExists") = ##class(%File).Exists($Extract(..GitBinPath(),2,*-1))
 	}
 	quit @..InstallNamespaceStorage()@("%gitBinExists")
 	#endif
@@ -105,8 +105,8 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    s binPath = $G(@..InstallNamespaceStorage()@("%gitBinPath"))
-    q $case($E(binPath),"""":binPath,:""""_binPath_"""")
+    set binPath = $Get(@..InstallNamespaceStorage()@("%gitBinPath"))
+    quit $case($Extract(binPath),"""":binPath,:""""_binPath_"""")
 ]]></Implementation>
 </Method>
 
@@ -132,8 +132,8 @@ Returns root temp folder</Description>
 <Private>1</Private>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-	if path'="" && ($E(path,*)'=..#Slash) {
-        s path = path_..#Slash
+	if path'="" && ($Extract(path,*)'=..#Slash) {
+        set path = path_..#Slash
     }
     quit path
 ]]></Implementation>
@@ -146,13 +146,13 @@ Returns root temp folder</Description>
 <Implementation><![CDATA[
     
     // we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
-    s @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
+    set @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
     kill @..InstallNamespaceStorage()@("%gitBinExists")
     
     // let's add slash in the end
-    s @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
+    set @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
     
-    s @..#Storage@("settings","namespaceTemp") = ..AddSlash(settings("namespaceTemp"))
+    set @..#Storage@("settings","namespaceTemp") = ..AddSlash(settings("namespaceTemp"))
 ]]></Implementation>
 </Method>
 
@@ -173,7 +173,7 @@ Returns root temp folder</Description>
 <CodeMode>expression</CodeMode>
 <FormalSpec>menuItemName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[$F(..#GitMenuItems, ","_menuItemName_",") > 0
+<Implementation><![CDATA[$Find(..#GitMenuItems, ","_menuItemName_",") > 0
 ]]></Implementation>
 </Method>
 
@@ -182,7 +182,7 @@ Returns root temp folder</Description>
 <CodeMode>expression</CodeMode>
 <FormalSpec>menuItemName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[$F(..#GitContextMenuItems, ","_menuItemName_",") > 0
+<Implementation><![CDATA[$Find(..#GitContextMenuItems, ","_menuItemName_",") > 0
 ]]></Implementation>
 </Method>
 
@@ -191,7 +191,7 @@ Returns root temp folder</Description>
 <CodeMode>expression</CodeMode>
 <FormalSpec>menuItemName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[$F(..#ImportAfterGitMenuItems, ","_menuItemName_",") > 0
+<Implementation><![CDATA[$Find(..#ImportAfterGitMenuItems, ","_menuItemName_",") > 0
 ]]></Implementation>
 </Method>
 
@@ -201,86 +201,86 @@ Returns root temp folder</Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim folder As %String = ..TempFolder()
-    #dim menuName As %String = $piece(MenuName,",")
-    #dim menuItemName As %String = $piece(MenuName,",",2)
+    #dim menuName As %String = $Piece(MenuName,",")
+    #dim menuItemName As %String = $Piece(MenuName,",",2)
     #dim ec As %Status = $$$OK
     
     if ..GitBinExists() = 0 && (menuItemName'="%Cache-Git-Settings") && 
     		($system.Version.GetOS()="Windows") {
-        w !!,"===Path to tortoisegitproc.exe not found: "_..GitBinPath()_"!===",!
+        write !!,"===Path to tortoisegitproc.exe not found: "_..GitBinPath()_"!===",!
     }
     
     if (menuName = "%SourceMenu") {
         if (menuItemName = "%Cache-Git-Settings") {
-            s Action = 2
+            set Action = 2
             #dim defNamespace As %String = ..#InstallNamespace
-            s Target = ##class(%cspapp.gitprojectsettings).%GetParameter("CSPURL")_"?NSpace="_$znspace_"&Username="_$username
+            set Target = ##class(%cspapp.gitprojectsettings).%GetParameter("CSPURL")_"?NSpace="_$znspace_"&Username="_$username
         }elseif (menuItemName = "%CreateRepo") {
             if ##class(%File).CreateDirectoryChain(..TempFolder()) {
                 // cleanup items info
-                k @..#Storage@("items")
-                k @..#Storage@("TSH")
-                s Action = 3
-                s Target = ..GitCommand("repocreate")
+                kill @..#Storage@("items")
+                kill @..#Storage@("TSH")
+                set Action = 3
+                set Target = ..GitCommand("repocreate")
             } else {
-                s ec = ..MakeError("Unable to create folder "_..TempFolder())
+                set ec = ..MakeError("Unable to create folder "_..TempFolder())
             }
         }elseif (menuItemName = "%Export") {
-            s ec = ..ExportAll()
+            set ec = ..ExportAll()
             if ec {
-                w "Program export is done",!
+                write "Program export is done",!
             }
         }elseif (menuItemName = "%Import") {
-            s ec = ..ImportAll()
-            s Reload = 1
+            set ec = ..ImportAll()
+            set Reload = 1
         }elseif (menuItemName = "%Clone") {
             if ##class(%File).CreateDirectoryChain(..TempFolder()) {
                 // cleanup items info
-                k @..#Storage@("items")
-                k @..#Storage@("TSH")
-                s Action = 3
-                s Target = ..GitCommand("clone", "")
+                kill @..#Storage@("items")
+                kill @..#Storage@("TSH")
+                set Action = 3
+                set Target = ..GitCommand("clone", "")
             } else {
-                s ec = ..MakeError("Unable to create folder "_..TempFolder())
+                set ec = ..MakeError("Unable to create folder "_..TempFolder())
             }
         }elseif (menuItemName = "%OpenRepoFolder") {
-	        s Action = 3
-	        s Target = ..TempFolder()
+	        set Action = 3
+	        set Target = ..TempFolder()
     	}elseif ..IsMenuGitCommand(menuItemName) {
-                s Action = 3
-                #dim command As %String = $ZCVT($E(menuItemName, 2, *), "L")
-                s Target = ..GitCommand(command)
+                set Action = 3
+                #dim command As %String = $ZConvert($Extract(menuItemName, 2, *), "L")
+                set Target = ..GitCommand(command)
         }
     }elseif (menuName = "%SourceMenuContext") {
 	    
-	    if (..Type(InternalName) = "csp") && ($E(InternalName,1) '= "/") {
+	    if (..Type(InternalName) = "csp") && ($Extract(InternalName,1) '= "/") {
 	        set InternalName = "/" _ InternalName
         }
         
         if (menuItemName = "%AddToSC") {
-            s ec = ..AddToSourceControl(InternalName)
+            set ec = ..AddToSourceControl(InternalName)
         }elseif (menuItemName = "%RemoveFromSC") {
-            s ec = ..RemoveFromSourceControl(InternalName)
+            set ec = ..RemoveFromSourceControl(InternalName)
         }
         if ..IsContextMenuGitCommand(menuItemName) {
-            s Action = 3
-            s command = $ZCVT($E(menuItemName, 2, *), "L")
-            s Target = ..GitCommand(command, InternalName)
+            set Action = 3
+            set command = $ZConvert($Extract(menuItemName, 2, *), "L")
+            set Target = ..GitCommand(command, InternalName)
         }
     }
     if (..#IsSYNC = 1) && (Action = 3) {
-        s Action = 0
-        d $zf(-1, "set HOME="_..DefaultTemp()_"&"_Target)
+        set Action = 0
+        do $zf(-1, "set HOME="_..DefaultTemp()_"&"_Target)
     }
     if ..IsImportAfter(menuItemName) && (Action = 3) {
             if (..#IsSYNC = 1) {
-                s ec = ..ImportAll()
+                set ec = ..ImportAll()
             } else {
-                w "Choose Import All menu after work with Git!", !
+                write "Choose Import All menu after work with Git!", !
             }
     }
     //w Target,!
-    q ec
+    quit ec
 ]]></Implementation>
 </Method>
 
@@ -288,7 +288,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec><![CDATA[Type:%Integer,Name:%String,InternalName:%String,Answer:%Integer,Msg:%String="",&Reload:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[    q $$$OK
+<Implementation><![CDATA[    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -305,26 +305,26 @@ Returns root temp folder</Description>
 <FormalSpec>name:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    set name = $TR(name, "/", ..#Slash)
+    set name = $Translate(name, "/", ..#Slash)
 
     // lower case for extensions
-    #dim extension As %String = $ZCVT($P(name,".",$L(name,".")),"L")
-    s $P(name,".",$L(name,".")) = extension
+    #dim extension As %String = $ZConvert($Piece(name,".",$Length(name,".")),"L")
+    set $Piece(name,".",$Length(name,".")) = extension
     
     // we shall put classes in different folders
     if extension = "cls" {
-        s name = $TR( $P(name,".", 1, $L(name,".")-1), ".", ..#Slash)_".cls"
+        set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), ".", ..#Slash)_".cls"
     }
     
     // we shall delete csp-app from csp files
-    if $E(name, 1) = ..#Slash {
-        s $E(name, 1) = ""
+    if $Extract(name, 1) = ..#Slash {
+        set $Extract(name, 1) = ""
     }
-    if $P(name, ..#Slash, 1) = "csp" {
-        s $P(name, ..#Slash, 1, 2) = "csp"
+    if $Piece(name, ..#Slash, 1) = "csp" {
+        set $Piece(name, ..#Slash, 1, 2) = "csp"
     }
 
-    q $TR(name," *?","___")_".xml"
+    quit $Translate(name," *?","___")_".xml"
 ]]></Implementation>
 </Method>
 
@@ -335,16 +335,16 @@ Returns root temp folder</Description>
 <Implementation><![CDATA[
     #dim i As %Integer
     #dim ec As %Status = $$$OK
-    f i = 1:1:$L(InternalName, ",") {
-        #dim item As %String = ..NormalizeExtension(($P(InternalName, ",", i)))
-        s @..#Storage@("items", item) = ""
+    for i = 1:1:$Length(InternalName, ",") {
+        #dim item As %String = ..NormalizeExtension(($Piece(InternalName, ",", i)))
+        set @..#Storage@("items", item) = ""
         #dim sc As %Status =  ..ExportItem(item)
         if 'sc {
-            s ec = $$$ADDSC(ec, sc)
+            set ec = $$$ADDSC(ec, sc)
         }
     }
-    s ec = $$$ADDSC(ec, ..ExportSCList())
-    q ec
+    set ec = $$$ADDSC(ec, ..ExportSCList())
+    quit ec
 ]]></Implementation>
 </Method>
 
@@ -364,22 +364,22 @@ Returns root temp folder</Description>
         
         #dim item As %String = ""
         //for all item in files
-        f  {
-            s item = $O(itemsList(item))
-            q:item=""
+        for  {
+            set item = $Order(itemsList(item))
+            quit:item=""
             
             //if item is not in sc -- delete file
             if '..IsInSourceControl(item) {
                 #dim sc As %Status = ..DeleteExternalFile(item)
                 if 'sc {
-                    s ec = $$$ADDSC(ec, sc)
+                    set ec = $$$ADDSC(ec, sc)
                 }
             }
         }
     } else {
-        s ec = ..DeleteExternalFile(InternalName)
+        set ec = ..DeleteExternalFile(InternalName)
     }
-    q ec
+    quit ec
 ]]></Implementation>
 </Method>
 
@@ -390,25 +390,25 @@ Returns root temp folder</Description>
 <Implementation><![CDATA[
     #dim sc As %Status = $$$OK
     
-    if $D(@..#Storage@("items", ..NormalizeExtension(InternalName))) {
+    if $Data(@..#Storage@("items", ..NormalizeExtension(InternalName))) {
 	    set InternalName = ..NormalizeExtension(InternalName)
     }
     
-    if $D(@..#Storage@("items", InternalName)) {
-        k @..#Storage@("items", InternalName)
-        s sc = ..DeleteExternalsForItem(InternalName)
-        d ..RemoveFolderIfEmpty(..TempFolder())
-        s sc = $$$ADDSC(sc, ..ExportSCList())
+    if $Data(@..#Storage@("items", InternalName)) {
+        kill @..#Storage@("items", InternalName)
+        set sc = ..DeleteExternalsForItem(InternalName)
+        do ..RemoveFolderIfEmpty(..TempFolder())
+        set sc = $$$ADDSC(sc, ..ExportSCList())
     } else {
         #dim parentElement As %String = ""
         if ..IsInSourceControl(InternalName, .parentElement) {
-            s sc = ..MakeError("This element is contained in "_parentElement_" that tracked by SourceControl")
+            set sc = ..MakeError("This element is contained in "_parentElement_" that tracked by SourceControl")
         }else {
-            s sc = ..MakeError("Element is not in SourceControl")
+            set sc = ..MakeError("Element is not in SourceControl")
         }
         
     }
-    q sc
+    quit sc
 ]]></Implementation>
 </Method>
 
@@ -417,11 +417,11 @@ Returns root temp folder</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
 <Implementation><![CDATA[
-    #dim extension = $P(InternalName, ".", $L(InternalName, "."))
-    q:extension="csp" 0
+    #dim extension = $Piece(InternalName, ".", $Length(InternalName, "."))
+    quit:extension="csp" 0
     
     #dim filename = $system.CSP.GetFileName(InternalName_"/")
-    q filename'="" && ##class(%File).DirectoryExists(filename)
+    quit filename'="" && ##class(%File).DirectoryExists(filename)
 ]]></Implementation>
 </Method>
 
@@ -434,16 +434,16 @@ csp -- csp-page or csp-folder. See <Method>IsCspFolder</Method>]]></Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    #dim extension As %String = $ZCVT($P(InternalName,".",$L(InternalName,".")),"L")
+    #dim extension As %String = $ZConvert($Piece(InternalName,".",$Length(InternalName,".")),"L")
     #dim type As %String = extension
     
-    if ($E(InternalName, 1, 4) = "/csp") 
-          || ($F(InternalName,".") = 0) 
-          || ($F(InternalName,"/") > 0) {
-        s type ="csp"
+    if ($Extract(InternalName, 1, 4) = "/csp") 
+          || ($Find(InternalName,".") = 0) 
+          || ($Find(InternalName,"/") > 0) {
+        set type ="csp"
     }
    
-    q type
+    quit type
 ]]></Implementation>
 </Method>
 
@@ -452,7 +452,7 @@ csp -- csp-page or csp-folder. See <Method>IsCspFolder</Method>]]></Description>
 <CodeMode>expression</CodeMode>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
-<Implementation><![CDATA[$piece(InternalName, ".", 1, $length(InternalName,".")-1)
+<Implementation><![CDATA[$Piece(InternalName, ".", 1, $Length(InternalName,".")-1)
 ]]></Implementation>
 </Method>
 
@@ -463,7 +463,7 @@ packageName without extension</Description>
 <CodeMode>expression</CodeMode>
 <FormalSpec>ClassName:%String,packageName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[$E(ClassName, 1, $L(packageName)) = packageName
+<Implementation><![CDATA[$Extract(ClassName, 1, $Length(packageName)) = packageName
 ]]></Implementation>
 </Method>
 
@@ -480,42 +480,42 @@ projectName without extension</Description>
     #dim type As %String = ..Type(InternalName)
     //w InternalName, "->"
     #dim name As %String = $case(type, "cls": ..NameWithoutExtension(InternalName), 
-                                       "pkg": $TR(..NameWithoutExtension(InternalName), "/", "."), 
-                                       "csp": $E(InternalName, 2, *),
+                                       "pkg": $Translate(..NameWithoutExtension(InternalName), "/", "."), 
+                                       "csp": $Extract(InternalName, 2, *),
                                        :InternalName)
-    if $E(name) = "." && (type = "pkg") {
-        s $E(name) = ""
+    if $Extract(name) = "." && (type = "pkg") {
+        set $Extract(name) = ""
     }
     
     //w name, " "
-    #dim checkId = projectName_"||"_name_"||"_$ZCVT(type,"U")
+    #dim checkId = projectName_"||"_name_"||"_$ZConvert(type,"U")
     //w checkId
     #dim isItemInProject As %Boolean = ##class(%Studio.ProjectItem).%ExistsId(checkId)
     //w " ", isItemInProject, !
     
     #dim i As %Integer
     if 'isItemInProject && ((type = "cls") || (type="pkg")) {
-        for i = 1:1:$L(name, ".") {
-            s checkId = projectName_"||"_$P(name, ".", 1, i)_"||PKG"
+        for i = 1:1:$Length(name, ".") {
+            set checkId = projectName_"||"_$Piece(name, ".", 1, i)_"||PKG"
             //w checkId, !
             if ##class(%Studio.ProjectItem).%ExistsId(checkId) {
-                s isItemInProject = 1
-                q
+                set isItemInProject = 1
+                quit
             }
         }
     }
     
     if 'isItemInProject && (type = "csp") {
-        for i = 1:1:$L(name, "/") {
-            s checkId = projectName_"||"_$P(name, "/", 1, i)_"||DIR"
+        for i = 1:1:$Length(name, "/") {
+            set checkId = projectName_"||"_$Piece(name, "/", 1, i)_"||DIR"
             
             if ##class(%Studio.ProjectItem).%ExistsId(checkId) {
-                s isItemInProject = 1
-                q
+                set isItemInProject = 1
+                quit
             }
         }
     }
-    q isItemInProject
+    quit isItemInProject
 ]]></Implementation>
 </Method>
 
@@ -524,7 +524,7 @@ projectName without extension</Description>
 <CodeMode>expression</CodeMode>
 <FormalSpec>InternalName:%String,cspFolder:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[$E(InternalName, 1, $L(cspFolder)) = cspFolder
+<Implementation><![CDATA[$Extract(InternalName, 1, $Length(cspFolder)) = cspFolder
 ]]></Implementation>
 </Method>
 
@@ -535,19 +535,19 @@ projectName without extension</Description>
 <Implementation><![CDATA[
     #dim item As %String = ""
     #dim found As %Boolean = 0
-    f  {
-        s item = $O(@..#Storage@("items", item))
-        q:item=""
+    for  {
+        set item = $Order(@..#Storage@("items", item))
+        quit:item=""
         continue:..Type(item)'="pkg"
         #dim packageName As %String = ..NameWithoutExtension(item)
 
         if ..IsClassInPackage(InternalName, packageName) {
-            s found = 1
-            s sourceControlItem = packageName
-            q
+            set found = 1
+            set sourceControlItem = packageName
+            quit
         }
     }
-    q found
+    quit found
 ]]></Implementation>
 </Method>
 
@@ -558,19 +558,19 @@ projectName without extension</Description>
 <Implementation><![CDATA[
     #dim item As %String = ""
     #dim found As %Boolean = 0
-    f  {
-        s item = $O(@..#Storage@("items", item))
-        q:item=""
+    for  {
+        set item = $Order(@..#Storage@("items", item))
+        quit:item=""
         continue:..Type(item)'="prj"
         #dim projectName As %String = ..NameWithoutExtension(item)
         
         if ..IsItemInProject(InternalName, projectName) {
-            s found = 1
-            s sourceControlItem = projectName
-            q
+            set found = 1
+            set sourceControlItem = projectName
+            quit
         }
     }
-    q found
+    quit found
 ]]></Implementation>
 </Method>
 
@@ -581,18 +581,18 @@ projectName without extension</Description>
 <Implementation><![CDATA[
     #dim cspFolder As %String = ""
     #dim found As %Boolean = 0
-    f  {
-        s cspFolder = $O(@..#Storage@("items", cspFolder))
-        q:cspFolder=""
+    for  {
+        set cspFolder = $Order(@..#Storage@("items", cspFolder))
+        quit:cspFolder=""
         continue:'(..Type(cspFolder)="csp" && ..IsCspFolder(cspFolder))
         
         if ..IsItemInCSPFolder(InternalName, cspFolder) {
-            s found = 1
-            s sourceControlItem = cspFolder
-            q 
+            set found = 1
+            set sourceControlItem = cspFolder
+            quit 
         }
     }
-    q found
+    quit found
 ]]></Implementation>
 </Method>
 
@@ -603,13 +603,13 @@ projectName without extension</Description>
 <Implementation><![CDATA[
     #dim isInSourceControl As %Boolean = 1
     
-    if $D(@..#Storage@("items", ..NormalizeExtension(InternalName))) {
-	    s InternalName = ..NormalizeExtension(InternalName)
+    if $Data(@..#Storage@("items", ..NormalizeExtension(InternalName))) {
+	    set InternalName = ..NormalizeExtension(InternalName)
     }
     
-    s isInSourceControl = $D(@..#Storage@("items", InternalName)) > 0
+    set isInSourceControl = $Data(@..#Storage@("items", InternalName)) > 0
     if isInSourceControl {
-        s sourceControlItem = InternalName
+        set sourceControlItem = InternalName
     }else {
         //if no direct reference maybe we have to look in packages, projects or csp-apps ?
         //We have three groups of routines
@@ -619,21 +619,21 @@ projectName without extension</Description>
 
         #dim type As %String = ..Type(InternalName)
         if type = "cls" {
-            s isInSourceControl = ..FindInPackages(InternalName, .sourceControlItem)
+            set isInSourceControl = ..FindInPackages(InternalName, .sourceControlItem)
         } elseif type = "csp" {
-	        if $E(InternalName) '= "/" {
-		        s InternalName = "/" _ InternalName
+	        if $Extract(InternalName) '= "/" {
+		        set InternalName = "/" _ InternalName
 	        }
-            s isInSourceControl = ..FindInCspFolders(InternalName, .sourceControlItem)
+            set isInSourceControl = ..FindInCspFolders(InternalName, .sourceControlItem)
         }
         
         // our last chance to find item -- let's look in projects
         if 'isInSourceControl {
-            s isInSourceControl = ..FindInProjects(InternalName, .sourceControlItem)
+            set isInSourceControl = ..FindInProjects(InternalName, .sourceControlItem)
         }
     }
     //w "checking ", $G(type), " ", InternalName, "=", isInSourceControl, !
-    q isInSourceControl
+    quit isInSourceControl
 ]]></Implementation>
 </Method>
 
@@ -651,11 +651,11 @@ projectName without extension</Description>
 <FormalSpec>name:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    #dim extension = $P(name, ".", $L(name, "."))
-    if $L(extension) <= 3 {
-        s $P(name, ".", $L(name, ".")) = $zcvt(extension, "L")
+    #dim extension = $Piece(name, ".", $Length(name, "."))
+    if $Length(extension) <= 3 {
+        set $Piece(name, ".", $Length(name, ".")) = $ZConvert(extension, "L")
     }
-    q name
+    quit name
 ]]></Implementation>
 </Method>
 
@@ -666,17 +666,17 @@ projectName without extension</Description>
 <Implementation><![CDATA[
     #dim type = ..Type(InternalName)
     //for csp-files (csp,js,html,css, all that stored in csp/...) we always check for changes in external file
-    #dim tsh = $case(type,"csp":"",:$G(@..#Storage@("TSH", ..NormalizeExtension(InternalName))))
+    #dim tsh = $case(type,"csp":"",:$Get(@..#Storage@("TSH", ..NormalizeExtension(InternalName))))
     if tsh = "" {
         #dim ts As %String = ##class(%RoutineMgr).TS(InternalName)
         if ts '= "" {
             // prj files have milliseconds in timestamp, so we crop them
-            s tsh = $P($zdth(ts, 3),".",1)
+            set tsh = $Piece($ZDateTimeH(ts, 3),".",1)
         } else {
-	        s tsh = "1840-12-31 00:00:00"
+	        set tsh = "1840-12-31 00:00:00"
         }
     }
-    q tsh
+    quit tsh
 ]]></Implementation>
 </Method>
 
@@ -685,8 +685,8 @@ projectName without extension</Description>
 <FormalSpec>InternalName:%String,tsh:%String</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    s @..#Storage@("TSH", ..NormalizeExtension(InternalName)) = $G(tsh, $H)
-    q $$$OK
+    set @..#Storage@("TSH", ..NormalizeExtension(InternalName)) = $Get(tsh, $Horolog)
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -695,8 +695,8 @@ projectName without extension</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    k @..#Storage@("TSH", ..NormalizeExtension(InternalName))
-    q $$$OK
+    kill @..#Storage@("TSH", ..NormalizeExtension(InternalName))
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -708,9 +708,9 @@ projectName without extension</Description>
     #dim fullName = ##class(Utils).FullExternalName(InternalName)
     #dim ec As %Status = $$$OK
     if ##class(%File).Exists(fullName) {
-        s ec = ##class(%File).Delete(fullName)
-        d ..RemoveRoutineTSH(InternalName)
-        w fullName, " for ", InternalName, " deleted",!
+        set ec = ##class(%File).Delete(fullName)
+        do ..RemoveRoutineTSH(InternalName)
+        write fullName, " for ", InternalName, " deleted",!
     }
     Quit ec
 ]]></Implementation>
@@ -726,9 +726,9 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     set tempFileTSH = ##class(%File).GetFileDateModified(filename)
     set routineTSH = ..RoutineTSH(InternalName)
     //file not found or path not found or some other error
-    s:tempFileTSH<0 tempFileTSH = "0,0"
-    set tempFileTSH = $zdt(tempFileTSH,3)
-    set routineTSH = $zdt(routineTSH,3)
+    set:tempFileTSH<0 tempFileTSH = "0,0"
+    set tempFileTSH = $zdatetime(tempFileTSH,3)
+    set routineTSH = $zdatetime(routineTSH,3)
 ]]></Implementation>
 </Method>
 
@@ -737,8 +737,8 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
 <Implementation><![CDATA[
-    d ..GetTempFileAndRoutineTS(InternalName,.tempFileTSH,.routineTSH)
-    q routineTSH]tempFileTSH
+    do ..GetTempFileAndRoutineTS(InternalName,.tempFileTSH,.routineTSH)
+    quit routineTSH]tempFileTSH
 ]]></Implementation>
 </Method>
 
@@ -747,8 +747,8 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
 <Implementation><![CDATA[
-    d ..GetTempFileAndRoutineTS(InternalName,.tempFileTSH,.routineTSH)
-    q tempFileTSH]routineTSH
+    do ..GetTempFileAndRoutineTS(InternalName,.tempFileTSH,.routineTSH)
+    quit tempFileTSH]routineTSH
 ]]></Implementation>
 </Method>
 
@@ -757,28 +757,28 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <FormalSpec>projectName:%String</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    #dim loadedProject As %String = $P(projectName, ".", 1)
+    #dim loadedProject As %String = $Piece(projectName, ".", 1)
     // now we should fix reference to csp pages in project items
     // that is: if project was exported from USER and imported in SAMPLES
     // then all reference to csp/user/page.csp should be changed to csp/samples/page.csp
     #dim item As %String =""
     #dim oldCspApp As %String = ""
     #dim newCspApp As %String = ""
-    f  {
-        s item = $O(^oddPROJECT(loadedProject,"Items",item))
-        q:item=""
-        if $D(^oddPROJECT(loadedProject,"Items",item,"CSP")) {
+    for  {
+        set item = $Order(^oddPROJECT(loadedProject,"Items",item))
+        quit:item=""
+        if $Data(^oddPROJECT(loadedProject,"Items",item,"CSP")) {
             #dim newitem As %String = item
-            s $P(newitem,"/",1,2) = $E($system.CSP.GetDefaultApp($znspace),2,*)
+            set $Piece(newitem,"/",1,2) = $Extract($system.CSP.GetDefaultApp($znspace),2,*)
             if newitem '= item {
-                s ^oddPROJECT(loadedProject,"Items",newitem,"CSP") = ^oddPROJECT(loadedProject,"Items",item,"CSP")
-                k ^oddPROJECT(loadedProject,"Items",item,"CSP")
-                s newCspApp = $E($system.CSP.GetDefaultApp($znspace),2,*)
-                s oldCspApp = $P(item,"/",1,2)
+                set ^oddPROJECT(loadedProject,"Items",newitem,"CSP") = ^oddPROJECT(loadedProject,"Items",item,"CSP")
+                kill ^oddPROJECT(loadedProject,"Items",item,"CSP")
+                set newCspApp = $Extract($system.CSP.GetDefaultApp($znspace),2,*)
+                set oldCspApp = $Piece(item,"/",1,2)
             }
         }
     }
-    q $$$OK
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -794,11 +794,11 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     #dim sc As %Status = $$$OK
  
     if ..IsRoutineOutdated(InternalName) {
-        s sc = $system.OBJ.Load(filename,"-l-d")
+        set sc = $system.OBJ.Load(filename,"-l-d")
         if sc {
-            s sc = ..UpdateRoutineTSH(InternalName, fileTSH)
+            set sc = ..UpdateRoutineTSH(InternalName, fileTSH)
             if ..Type(InternalName) = "prj" {
-                s sc = $$$ADDSC(sc, ..FixProjectCspReferences(InternalName))
+                set sc = $$$ADDSC(sc, ..FixProjectCspReferences(InternalName))
             }
         }
     } else {
@@ -829,14 +829,14 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     
     //change all csp/ names to /csp/ names
     #dim item As %String = "csp"
-    f  {
-        s item = $O(itemList(item))
-        q:item=""
-        q:$E(item, 1, 4)'="csp/"
-        k itemList(item)
-        s itemList("/"_item)=""
+    for  {
+        set item = $Order(itemList(item))
+        quit:item=""
+        quit:$Extract(item, 1, 4)'="csp/"
+        kill itemList(item)
+        set itemList("/"_item)=""
     }
-    q $$$OK
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -847,61 +847,61 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     #dim err, itemList
     
     kill err, itemList
-    s err = 0   
+    set err = 0   
     
     #dim ec As %Status = ..ListItemsInFiles(.itemList, .err)
-    q:'ec ec
+    quit:'ec ec
     
     #dim internalName As %String = ""
-    f  {
-        s internalName = $O(itemList(internalName))
-        q:internalName=""
+    for  {
+        set internalName = $Order(itemList(internalName))
+        quit:internalName=""
         if '..IsInSourceControl(internalName) {
         	//w "item ",internalName," is not in source control, skipping",!
         	continue
         }
         #dim sc As %Status = ..LoadIfOutdated(internalName)
         if $$$ISERR(sc) {
-            s ec = $$$ADDSC(ec, sc)
+            set ec = $$$ADDSC(ec, sc)
         }
     }
     
     //let's delete all items for which corresponding files had been deleted
     #dim item as %String = ""
-    f  {
-        s item = $O(@..#Storage@("TSH", item))
-        q:item=""
+    for  {
+        set item = $Order(@..#Storage@("TSH", item))
+        quit:item=""
 
         if '##class(%File).Exists(..FullExternalName(item)) {
             #dim type As %String = ..Type(item)
             #dim name As %String = ..NameWithoutExtension(item)
             #dim deleted As %Boolean = 1
             if type = "prj" {
-                s ec = $$$ADDSC(ec, $system.OBJ.DeleteProject(name))
+                set ec = $$$ADDSC(ec, $system.OBJ.DeleteProject(name))
             }elseif type = "cls" {
-                s ec = $$$ADDSC(ec, $system.OBJ.Delete(item))
-            }elseif $LF($LB("mac","int","inc","bas","mvb", "mvi","dfi"), type) > 0 {
-                s ec = $$$ADDSC(ec, ##class(%Routine).Delete(item))
+                set ec = $$$ADDSC(ec, $system.OBJ.Delete(item))
+            }elseif $ListFind($ListBuild("mac","int","inc","bas","mvb", "mvi","dfi"), type) > 0 {
+                set ec = $$$ADDSC(ec, ##class(%Routine).Delete(item))
             }elseif type = "csp" {
                 #dim filename = $system.CSP.GetFileName(item)
                 if ##class(%File).Exists(filename) && '##class(%File).Delete(filename) {
-                    s ec = $$$ADDSC(ec, ..MakeError("Error while removing "_item))
+                    set ec = $$$ADDSC(ec, ..MakeError("Error while removing "_item))
                 }
             } else {
-                s deleted = 0
+                set deleted = 0
             }
             
             if deleted && ec {
-                d ..RemoveRoutineTSH(item)
-                w item, " was deleted", !
+                do ..RemoveRoutineTSH(item)
+                write item, " was deleted", !
             } else {
-                w "Error: could not delete ", item, !
+                write "Error: could not delete ", item, !
             }
         }
     }
     
-    w "import done", !
-    q ec
+    write "import done", !
+    quit ec
 ]]></Implementation>
 </Method>
 
@@ -923,7 +923,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     
     #dim rs As %ResultSet = ##class(%ResultSet).%New("%RoutineMgr:StudioOpenDialog")
     #dim ec As %Status = rs.Execute(path_$case(path,"":"",:"/")_"*",$$$Dir, $$$OrderBy, $$$SystemFiles, $$$Flat, $$$NotStudio, $$$ShowGenerated, $$$Filter)
-    q:'ec ec
+    quit:'ec ec
     while rs.Next() {
         #dim name As %String = rs.Get("Name")
         #dim isdirectory As %String = rs.Get("IsDirectory")
@@ -932,17 +932,17 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         if (type = $$$Directory) || (type = $$$CSPFolder) {
             #dim newpath As %String = $case(path,"":name,:path_isdirectory_name)
             #dim importedcnt As %Integer = 0
-            d ..ExportRoutinesAux(newpath, isdirectory, level + 1)
+            do ..ExportRoutinesAux(newpath, isdirectory, level + 1)
         } else {
             #dim InternalName As %String = path_sep_name
-            if (type = $$$CspFile) && ($E(InternalName) '= "/") {
-                s InternalName = "/"_InternalName
+            if (type = $$$CspFile) && ($Extract(InternalName) '= "/") {
+                set InternalName = "/"_InternalName
             }
-            s ec = ..ExportItem(InternalName)
+            set ec = ..ExportItem(InternalName)
         }
     }
-    k rs
-    q ec
+    kill rs
+    quit ec
 ]]></Implementation>
 </Method>
 
@@ -962,13 +962,13 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         $$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
     }else {
         if ..IsTempFileOutdated(InternalName) {
-            w "exporting new version of  ", InternalName, !
+            write "exporting new version of  ", InternalName, !
             #dim filename As %String = ..FullExternalName(InternalName)
             $$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
-            $$$QuitOnError(..UpdateRoutineTSH(InternalName, $H))
+            $$$QuitOnError(..UpdateRoutineTSH(InternalName, $Horolog))
         }
     }
-    q $$$OK
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -979,17 +979,17 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <Implementation><![CDATA[
     #dim rs As %ResultSet = ##class(%ResultSet).%New("%Studio.Project:ProjectItemsList")
     $$$QuitOnError(rs.Execute(project))
-    #dim typesWithoutExtension As %List = $LB("CLS", "PKG")
+    #dim typesWithoutExtension As %List = $ListBuild("CLS", "PKG")
     while rs.Next() {
         #dim name = rs.Get("Name")
-        if $LF(typesWithoutExtension, rs.Get("Type")) {
-            s name = name _ "." _ rs.Get("Type")
+        if $ListFind(typesWithoutExtension, rs.Get("Type")) {
+            set name = name _ "." _ rs.Get("Type")
         }
         #dim ec As %Status = ..ExportItem(name)
-        q:'ec
+        quit:'ec
     }
-    k rs
-    q $$$OK
+    kill rs
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -998,7 +998,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     $$$QuitOnError(..ExportRoutines())
-    q ..ExportSCList()
+    quit ..ExportSCList()
 ]]></Implementation>
 </Method>
 
@@ -1007,7 +1007,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     $$$QuitOnError(..ImportSCList())
-    q ..ImportRoutines()
+    quit ..ImportRoutines()
 ]]></Implementation>
 </Method>
 
@@ -1017,13 +1017,13 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <Implementation><![CDATA[
     #dim item As %String = ""
     #dim ec As %Status = $$$OK
-    f  {
-        s item = $O(@..#Storage@("items",item))
-        q:item=""
-        s ec = ..ExportItem(item)
-        q:'ec       
+    for  {
+        set item = $Order(@..#Storage@("items",item))
+        quit:item=""
+        set ec = ..ExportItem(item)
+        quit:'ec       
     }
-    q ec
+    quit ec
 ]]></Implementation>
 </Method>
 
@@ -1037,21 +1037,21 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     #dim defaultCspApp As %String = $system.CSP.GetDefaultApp($znspace)
     $$$QuitOnError(file.Open("WSN"))
     
-    f  {
-        s item = $O(@..#Storage@("items",item))
-        q:item=""
+    for  {
+        set item = $Order(@..#Storage@("items",item))
+        quit:item=""
         #dim fixedItem As %String = item
-        if $E(fixedItem, 1, $L(defaultCspApp)) = defaultCspApp {
-            s $E(fixedItem, 1, $L(defaultCspApp)) = "<cspapp>"
+        if $Extract(fixedItem, 1, $Length(defaultCspApp)) = defaultCspApp {
+            set $Extract(fixedItem, 1, $Length(defaultCspApp)) = "<cspapp>"
         }
         
-        d file.WriteLine(fixedItem)
+        do file.WriteLine(fixedItem)
         
     }
     $$$QuitOnError(file.%Save())
-    d file.Close()
-    k file
-    q $$$OK
+    do file.Close()
+    kill file
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -1071,13 +1071,13 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         #dim s As %String = file.ReadLine(,,.eol)
         continue:s=""
         #dim item As %String = $Replace(s, "<cspapp>", defaultCspApp)
-        s a(..NormalizeExtension(item)) = ""
+        set a(..NormalizeExtension(item)) = ""
     }
-    k @..#Storage("items")
-    m @..#Storage("items") = a
-    d file.Close()
-    k file
-    q $$$OK
+    kill @..#Storage("items")
+    merge @..#Storage("items") = a
+    do file.Close()
+    kill file
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -1098,18 +1098,18 @@ returns true if directory was deleted</Description>
         #dim name As %String = rs.Get("ItemName")
         #define IsDirectory(%type) %type="D"
         
-        s fileCount = fileCount + 1
-        q:'$$$IsDirectory(type)
+        set fileCount = fileCount + 1
+        quit:'$$$IsDirectory(type)
         continue:name=".git"
         if ..RemoveFolderIfEmpty(fullname) {
-            s fileCount = fileCount - 1
+            set fileCount = fileCount - 1
         }
     }
     if fileCount = 0 {
-        d ##class(%File).RemoveDirectory(path)
+        do ##class(%File).RemoveDirectory(path)
     }
-    k rs
-    q 'fileCount
+    kill rs
+    quit 'fileCount
 ]]></Implementation>
 </Method>
 </Class>
