@@ -183,6 +183,15 @@ just saved. It can be use to export this documement to an external form for exam
 ]]></Implementation>
 </Method>
 
+<Method name="OnAfterCompile">
+<Description>
+Called after the compile of the item is done.</Description>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	Quit ..OnAfterSave(InternalName)
+]]></Implementation>
+</Method>
+
 <Method name="IsInSourceControl">
 <Description>
 Returns true if this item is in source control and false otherwise.</Description>
