@@ -26,5 +26,18 @@
 	do $$$AssertEquals(##class(Utils).IsInSourceControl("test.mac"),0)
 ]]></Implementation>
 </Method>
+
+<Method name="OnBeforeAllTests">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if '##class(%Routine).Exists("test.mac") {
+		set r = ##class(%Routine).%New("test.mac")
+		do r.WriteLine(" write 22,!")
+		do r.Save()
+		do r.Compile()
+	}
+	quit $$$OK
+]]></Implementation>
+</Method>
 </Class>
 </Export>
