@@ -86,6 +86,14 @@ Returns root temp folder</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="GroupByFolder">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[$Get(@..#Storage@("settings","groupByFolder"), 0)
+]]></Implementation>
+</Method>
+
 <Method name="GitBinExists">
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Boolean</ReturnType>
@@ -144,7 +152,6 @@ Returns root temp folder</Description>
 <FormalSpec><![CDATA[&settings]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    
     // we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
     set @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
     kill @..InstallNamespaceStorage()@("%gitBinExists")
@@ -153,6 +160,7 @@ Returns root temp folder</Description>
     set @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
     
     set @..#Storage@("settings","namespaceTemp") = ..AddSlash(settings("namespaceTemp"))
+    set @..#Storage@("settings","groupByFolder") = $case(settings("groupByFolder"), "":"", :1)
 ]]></Implementation>
 </Method>
 
@@ -311,11 +319,17 @@ Returns root temp folder</Description>
     #dim extension As %String = $ZConvert($Piece(name,".",$Length(name,".")),"L")
     set $Piece(name,".",$Length(name,".")) = extension
     
+	#dim groupByFolder As %Boolean = ..GroupByFolder()
     // we shall put classes in different folders
     if extension = "cls" {
-        set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), ".", ..#Slash)_".cls"
+       	set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), ".", ..#Slash)_".cls"
+    } elseif groupByFolder {
+	    // If groupByFolder = 1 then we put inc, mac, int in corresponding folder, not in root.
+		// For example project.include.inc will be placed in project\include.inc.xml
+        set sep = $Case(extension, "dfi" : "-", : ".")
+	    set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), sep, ..#Slash)_"." _ extension
     }
-    
+        
     // we shall delete csp-app from csp files
     if $Extract(name, 1) = ..#Slash {
         set $Extract(name, 1) = ""
@@ -323,7 +337,8 @@ Returns root temp folder</Description>
     if $Piece(name, ..#Slash, 1) = "csp" {
         set $Piece(name, ..#Slash, 1, 2) = "csp"
     }
-
+    write "name=",name,!
+    write "external name = ", $Translate(name," *?","___")_".xml", !
     quit $Translate(name," *?","___")_".xml"
 ]]></Implementation>
 </Method>
