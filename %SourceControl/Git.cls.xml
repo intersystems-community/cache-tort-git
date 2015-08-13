@@ -51,6 +51,7 @@
 	if menu '= "%SourceMenu", menu'="%SourceMenuContext" {
 		quit $$$OK
 	}
+	set InternalName = ##class(Utils).NormalizeInternalName(InternalName)
 	set ec = ##class(Utils).UserAction(InternalName, Name, .Target, .Action, .Reload)
 	quit ec
 ]]></Implementation>
@@ -114,7 +115,7 @@
 	
 	if (itemName = "") || '##class(Utils).IsNamespaceInGit() {
 		set Enabled = -1
-	}elseif ##class(Utils).IsInSourceControl(itemName) {
+	}elseif ##class(Utils).IsInSourceControl(##class(Utils).NormalizeInternalName(itemName)) {
 		set Enabled = $Case(menuItemName, "%AddToSC":-1,:1)
 	} else {
 		set Enabled = $Case(menuItemName, "%AddToSC":1,:-1)
@@ -159,6 +160,7 @@ to load the item from an external format.</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	set InternalName = ##class(Utils).NormalizeInternalName(InternalName)
 	if ##class(Utils).IsInSourceControl(InternalName) {
 		quit ##class(Utils).LoadIfOutdated(InternalName)
 	}
@@ -174,6 +176,7 @@ just saved. It can be use to export this documement to an external form for exam
 <FormalSpec>InternalName:%String,Object:%RegisteredObject=$$$NULLOREF</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	set InternalName = ##class(Utils).NormalizeInternalName(InternalName)
 	if ##class(Utils).IsNamespaceInGit() && ..IsInSourceControl(InternalName) {
 		$$$QuitOnError(##class(Utils).RemoveRoutineTSH(InternalName))
 		quit ##class(Utils).ExportItem(InternalName)
@@ -198,7 +201,7 @@ Returns true if this item is in source control and false otherwise.</Description
 <CodeMode>expression</CodeMode>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[InternalName'="" && ##class(Utils).IsInSourceControl(InternalName)
+<Implementation><![CDATA[InternalName'="" && ##class(Utils).IsInSourceControl(##class(Utils).NormalizeInternalName(InternalName))
 ]]></Implementation>
 </Method>
 
@@ -208,6 +211,7 @@ Called after an item is deleted.</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	set InternalName = ##class(Utils).NormalizeInternalName(InternalName)
 	if ##class(Utils).IsInSourceControl(InternalName) {
 		quit ##class(Utils).DeleteExternalFile(InternalName)
 	}

@@ -455,7 +455,17 @@ csp -- csp-page or csp-folder. See <Method>IsCspFolder</Method>]]></Description>
     if ($Extract(InternalName, 1, 4) = "/csp") 
           || ($Find(InternalName,".") = 0) 
           || ($Find(InternalName,"/") > 0) {
-        set type ="csp"
+	          //we need to double-check
+	          //Sometimes (see NormalizeInternalName) Studio passes routine names as /Package/SubPackage/Routine.mac
+	          //Generally speaking this can be static file
+	          if (type = "mac") || (type = "inc") || (type = "int") {
+		          #dim filename = $system.CSP.GetFileName(InternalName)
+		          if ##class(%File).Exists(filename) {
+			          set type = "csp"
+		          }
+	          } else {
+        			set type ="csp"
+	          }
     }
    
     quit type
@@ -658,6 +668,29 @@ projectName without extension</Description>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[..TempFolder()_..ExternalName(InternalName)
+]]></Implementation>
+</Method>
+
+<Method name="NormalizeInternalName">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>name:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	//Studio passes name of routine with dots as it is in folders
+	//e.g. Package.SubPackage.Routine.mac has InternalName =  /Package/SubPackage/Routine.mac
+	//This happens if right-click in Workspace -> Namespace
+	//If right-click in Workspace -> Project then everything passes ok
+	//let's fix this
+	if $Extract(name) '= "/" {
+		quit name
+	}
+	
+	set type = ..Type(name)
+	
+	if (type = "inc") || (type = "mac") || (type = "int") {
+		set name = $Extract($Translate(name, "/", "."), 2, *)
+	}
+    quit name
 ]]></Implementation>
 </Method>
 
