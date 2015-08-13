@@ -337,8 +337,8 @@ Returns root temp folder</Description>
     if $Piece(name, ..#Slash, 1) = "csp" {
         set $Piece(name, ..#Slash, 1, 2) = "csp"
     }
-    write "name=",name,!
-    write "external name = ", $Translate(name," *?","___")_".xml", !
+    //write "name=",name,!
+    //write "external name = ", $Translate(name," *?","___")_".xml", !
     quit $Translate(name," *?","___")_".xml"
 ]]></Implementation>
 </Method>
