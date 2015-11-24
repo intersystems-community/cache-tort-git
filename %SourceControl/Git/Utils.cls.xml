@@ -436,6 +436,9 @@ Returns root temp folder</Description>
     quit:extension="csp" 0
     
     #dim filename = $system.CSP.GetFileName(InternalName_"/")
+    if filename = "" && ($Extract(InternalName,1) '= "/") {
+	    set filename = $system.CSP.GetFileName("/"_InternalName_"/")
+    }
     quit filename'="" && ##class(%File).DirectoryExists(filename)
 ]]></Implementation>
 </Method>
@@ -815,12 +818,13 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     for  {
         set item = $Order(^oddPROJECT(loadedProject,"Items",item))
         quit:item=""
-        if $Data(^oddPROJECT(loadedProject,"Items",item,"CSP")) {
+        set type = $Order(^oddPROJECT(loadedProject,"Items",item,""))
+        if type = "CSP" || (type = "DIR") {
             #dim newitem As %String = item
             set $Piece(newitem,"/",1,2) = $Extract($system.CSP.GetDefaultApp($znspace),2,*)
             if newitem '= item {
-                set ^oddPROJECT(loadedProject,"Items",newitem,"CSP") = ^oddPROJECT(loadedProject,"Items",item,"CSP")
-                kill ^oddPROJECT(loadedProject,"Items",item,"CSP")
+                set ^oddPROJECT(loadedProject,"Items",newitem,type) = ^oddPROJECT(loadedProject,"Items",item,type)
+                kill ^oddPROJECT(loadedProject,"Items",item,type)
                 set newCspApp = $Extract($system.CSP.GetDefaultApp($znspace),2,*)
                 set oldCspApp = $Piece(item,"/",1,2)
             }
@@ -1000,7 +1004,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim type = ..Type(InternalName)
-    
+    //write "checking if we should export "_InternalName,!
     if type = "pkg" {
         $$$QuitOnError(..ExportRoutinesAux(..NameWithoutExtension(InternalName), "."))
     }elseif type = "prj" && expand {
