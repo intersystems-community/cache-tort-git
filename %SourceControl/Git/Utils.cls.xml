@@ -852,9 +852,13 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
             if ..Type(InternalName) = "prj" {
                 set sc = $$$ADDSC(sc, ..FixProjectCspReferences(InternalName))
             }
+            write InternalName," has been imported",!
+        } else {
+	        write "ERROR importing" ,InternalName,!
+	        do $system.Status.DisplayError(sc)
         }
     } else {
-            //WRITE "skip import -- same TS",!
+	    write InternalName, " is newer than on-disk version, skipping import",!
     }
     Quit sc
 ]]></Implementation>
@@ -896,6 +900,8 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	write "==import start==", !
+	
     #dim err, itemList
     
     kill err, itemList
@@ -952,7 +958,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         }
     }
     
-    write "import done", !
+    write "==import done==", !
     quit ec
 ]]></Implementation>
 </Method>
@@ -1014,7 +1020,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         $$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
     }else {
         if ..IsTempFileOutdated(InternalName) {
-            write "exporting new version of  ", InternalName, !
+            write "exporting new version of ", InternalName, !
             #dim filename As %String = ..FullExternalName(InternalName)
             $$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
             $$$QuitOnError(..UpdateRoutineTSH(InternalName, $Horolog))
