@@ -257,7 +257,14 @@ Returns root temp folder</Description>
     	}elseif ..IsMenuGitCommand(menuItemName) {
                 set Action = 3
                 #dim command As %String = $ZConvert($Extract(menuItemName, 2, *), "L")
-                set Target = ..GitCommand(command)
+                set ec = $$$OK
+                if $Data(@..#Storage@("hook"),hook)=1 {
+	                set $ListBuild(class,method) = hook
+	                set ec = $classmethod(class, method, command, InternalName)
+                }
+                if $$$ISOK(ec) {
+                	set Target = ..GitCommand(command)
+                }
         }
     }elseif (menuName = "%SourceMenuContext") {
 	    
