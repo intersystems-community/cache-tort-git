@@ -258,7 +258,7 @@ Returns root temp folder</Description>
                 set Action = 3
                 #dim command As %String = $ZConvert($Extract(menuItemName, 2, *), "L")
                 set ec = $$$OK
-                if $Data(@..#Storage@("hook"),hook)=1 {
+                if $Data(@..#Storage@("settings","hook"),hook)=1 {
 	                set $ListBuild(class,method) = hook
 	                set ec = $classmethod(class, method, command, InternalName)
                 }
