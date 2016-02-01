@@ -234,12 +234,17 @@ Returns root temp folder</Description>
                 set ec = ..MakeError("Unable to create folder "_..TempFolder())
             }
         }elseif (menuItemName = "%Export") {
+            write "==export start==",!
             set ec = ..ExportAll()
             if ec {
-                write "Program export is done",!
+                write !,"==export done==",!
             }
         }elseif (menuItemName = "%Import") {
             set ec = ..ImportAll()
+            set Reload = 1
+        }elseif (menuItemName = "%ImportForce") {
+	        #define Force 1
+            set ec = ..ImportAll($$$Force)
             set Reload = 1
         }elseif (menuItemName = "%Clone") {
             if ##class(%File).CreateDirectoryChain(..TempFolder()) {
@@ -841,9 +846,12 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 ]]></Implementation>
 </Method>
 
-<Method name="LoadIfOutdated">
+<Method name="ImportItem">
+<Description><![CDATA[
+imports file if version in system is newer then version on disk.
+if <var>force</var> = 1 then imports in any case.]]></Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec>InternalName:%String</FormalSpec>
+<FormalSpec>InternalName:%String,force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     //WRITE "Before Load Of: ", InternalName, " ", ..IsInSourceControl(InternalName), !
@@ -852,7 +860,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     #dim fileTSH = ##class(%File).GetFileDateModified(filename)
     #dim sc As %Status = $$$OK
  
-    if ..IsRoutineOutdated(InternalName) {
+    if ..IsRoutineOutdated(InternalName) || force {
         set sc = $system.OBJ.Load(filename,"-l-d")
         if sc {
             set sc = ..UpdateRoutineTSH(InternalName, fileTSH)
@@ -905,6 +913,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 
 <Method name="ImportRoutines">
 <ClassMethod>1</ClassMethod>
+<FormalSpec>force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
 	write "==import start==", !
@@ -925,7 +934,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         	//w "item ",internalName," is not in source control, skipping",!
         	continue
         }
-        #dim sc As %Status = ..LoadIfOutdated(internalName)
+        #dim sc As %Status = ..ImportItem(internalName, force)
         if $$$ISERR(sc) {
             set ec = $$$ADDSC(ec, sc)
         }
@@ -1031,6 +1040,8 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
             #dim filename As %String = ..FullExternalName(InternalName)
             $$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
             $$$QuitOnError(..UpdateRoutineTSH(InternalName, $Horolog))
+        } else {
+	        write !,InternalName, " is not newer than on-disk version, skipping export"
         }
     }
     quit $$$OK
@@ -1068,11 +1079,14 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 </Method>
 
 <Method name="ImportAll">
+<Description><![CDATA[
+if <var>force</var> = 1 then we import item even if timestamp in system is newer]]></Description>
 <ClassMethod>1</ClassMethod>
+<FormalSpec>force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     $$$QuitOnError(..ImportSCList())
-    quit ..ImportRoutines()
+    quit ..ImportRoutines(force)
 ]]></Implementation>
 </Method>
 

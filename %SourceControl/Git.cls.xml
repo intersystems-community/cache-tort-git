@@ -29,6 +29,7 @@
 <MenuItem Separator="true"/>
 <MenuItem Name="%Export" Save = "001" />
 <MenuItem Name="%Import" Save = "001" />
+<MenuItem Name="%ImportForce" Save = "001" />
 <MenuItem Separator="true"/>
 <MenuItem Name="%OpenRepoFolder" Save = "001" />
 </Menu>
@@ -80,7 +81,9 @@
 			set DisplayName = "Export All"
 		} elseif name = "%Import" {
 			set DisplayName = "Import All"
-		} elseif name = "%RepoStatus" && ##class(Utils).GitBinExists() {
+		} elseif name = "%ImportForce" {
+			set DisplayName = "Import All Force"
+		}elseif name = "%RepoStatus" && ##class(Utils).GitBinExists() {
 			set DisplayName = "Check for modifications"
 		}elseif name = "%OpenRepoFolder" {
 			set DisplayName = "Open Repo Folder"
@@ -162,7 +165,7 @@ to load the item from an external format.</Description>
 <Implementation><![CDATA[
 	set InternalName = ##class(Utils).NormalizeInternalName(InternalName)
 	if ##class(Utils).IsInSourceControl(InternalName) {
-		quit ##class(Utils).LoadIfOutdated(InternalName)
+		quit ##class(Utils).ImportItem(InternalName)
 	}
 	quit $$$OK
 ]]></Implementation>
