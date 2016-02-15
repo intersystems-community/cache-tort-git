@@ -86,6 +86,14 @@ Returns root temp folder</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="GroupByFolder">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[$Get(@..#Storage@("settings","groupByFolder"), 0)
+]]></Implementation>
+</Method>
+
 <Method name="GitBinExists">
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Boolean</ReturnType>
@@ -144,7 +152,6 @@ Returns root temp folder</Description>
 <FormalSpec><![CDATA[&settings]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    
     // we change ^STORAGE to ^["InstallNamespace"]|STORAGE, so we store path to git.exe in one place
     set @..InstallNamespaceStorage()@("%gitBinPath") = settings("gitBinPath")
     kill @..InstallNamespaceStorage()@("%gitBinExists")
@@ -153,6 +160,7 @@ Returns root temp folder</Description>
     set @..InstallNamespaceStorage()@("%defaultTemp") = ..AddSlash(settings("defaultTemp"))
     
     set @..#Storage@("settings","namespaceTemp") = ..AddSlash(settings("namespaceTemp"))
+    set @..#Storage@("settings","groupByFolder") = $case(settings("groupByFolder"), "":"", :1)
 ]]></Implementation>
 </Method>
 
@@ -226,12 +234,17 @@ Returns root temp folder</Description>
                 set ec = ..MakeError("Unable to create folder "_..TempFolder())
             }
         }elseif (menuItemName = "%Export") {
+            write "==export start==",!
             set ec = ..ExportAll()
             if ec {
-                write "Program export is done",!
+                write !,"==export done==",!
             }
         }elseif (menuItemName = "%Import") {
             set ec = ..ImportAll()
+            set Reload = 1
+        }elseif (menuItemName = "%ImportForce") {
+	        #define Force 1
+            set ec = ..ImportAll($$$Force)
             set Reload = 1
         }elseif (menuItemName = "%Clone") {
             if ##class(%File).CreateDirectoryChain(..TempFolder()) {
@@ -249,7 +262,14 @@ Returns root temp folder</Description>
     	}elseif ..IsMenuGitCommand(menuItemName) {
                 set Action = 3
                 #dim command As %String = $ZConvert($Extract(menuItemName, 2, *), "L")
-                set Target = ..GitCommand(command)
+                set ec = $$$OK
+                if $Data(@..#Storage@("settings","hook"),hook)=1 {
+	                set $ListBuild(class,method) = hook
+	                set ec = $classmethod(class, method, command, InternalName)
+                }
+                if $$$ISOK(ec) {
+                	set Target = ..GitCommand(command)
+                }
         }
     }elseif (menuName = "%SourceMenuContext") {
 	    
@@ -311,11 +331,17 @@ Returns root temp folder</Description>
     #dim extension As %String = $ZConvert($Piece(name,".",$Length(name,".")),"L")
     set $Piece(name,".",$Length(name,".")) = extension
     
+	#dim groupByFolder As %Boolean = ..GroupByFolder()
     // we shall put classes in different folders
     if extension = "cls" {
-        set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), ".", ..#Slash)_".cls"
+       	set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), ".", ..#Slash)_".cls"
+    } elseif groupByFolder {
+	    // If groupByFolder = 1 then we put inc, mac, int in corresponding folder, not in root.
+		// For example project.include.inc will be placed in project\include.inc.xml
+        set sep = $Case(extension, "dfi" : "-", : ".")
+	    set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), sep, ..#Slash)_"." _ extension
     }
-    
+        
     // we shall delete csp-app from csp files
     if $Extract(name, 1) = ..#Slash {
         set $Extract(name, 1) = ""
@@ -323,7 +349,8 @@ Returns root temp folder</Description>
     if $Piece(name, ..#Slash, 1) = "csp" {
         set $Piece(name, ..#Slash, 1, 2) = "csp"
     }
-
+    //write "name=",name,!
+    //write "external name = ", $Translate(name," *?","___")_".xml", !
     quit $Translate(name," *?","___")_".xml"
 ]]></Implementation>
 </Method>
@@ -421,6 +448,9 @@ Returns root temp folder</Description>
     quit:extension="csp" 0
     
     #dim filename = $system.CSP.GetFileName(InternalName_"/")
+    if filename = "" && ($Extract(InternalName,1) '= "/") {
+	    set filename = $system.CSP.GetFileName("/"_InternalName_"/")
+    }
     quit filename'="" && ##class(%File).DirectoryExists(filename)
 ]]></Implementation>
 </Method>
@@ -800,12 +830,13 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     for  {
         set item = $Order(^oddPROJECT(loadedProject,"Items",item))
         quit:item=""
-        if $Data(^oddPROJECT(loadedProject,"Items",item,"CSP")) {
+        set type = $Order(^oddPROJECT(loadedProject,"Items",item,""))
+        if type = "CSP" || (type = "DIR") {
             #dim newitem As %String = item
             set $Piece(newitem,"/",1,2) = $Extract($system.CSP.GetDefaultApp($znspace),2,*)
             if newitem '= item {
-                set ^oddPROJECT(loadedProject,"Items",newitem,"CSP") = ^oddPROJECT(loadedProject,"Items",item,"CSP")
-                kill ^oddPROJECT(loadedProject,"Items",item,"CSP")
+                set ^oddPROJECT(loadedProject,"Items",newitem,type) = ^oddPROJECT(loadedProject,"Items",item,type)
+                kill ^oddPROJECT(loadedProject,"Items",item,type)
                 set newCspApp = $Extract($system.CSP.GetDefaultApp($znspace),2,*)
                 set oldCspApp = $Piece(item,"/",1,2)
             }
@@ -815,9 +846,12 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 ]]></Implementation>
 </Method>
 
-<Method name="LoadIfOutdated">
+<Method name="ImportItem">
+<Description><![CDATA[
+imports file if version in system is newer then version on disk.
+if <var>force</var> = 1 then imports in any case.]]></Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec>InternalName:%String</FormalSpec>
+<FormalSpec>InternalName:%String,force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     //WRITE "Before Load Of: ", InternalName, " ", ..IsInSourceControl(InternalName), !
@@ -826,16 +860,20 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
     #dim fileTSH = ##class(%File).GetFileDateModified(filename)
     #dim sc As %Status = $$$OK
  
-    if ..IsRoutineOutdated(InternalName) {
+    if ..IsRoutineOutdated(InternalName) || force {
         set sc = $system.OBJ.Load(filename,"-l-d")
         if sc {
             set sc = ..UpdateRoutineTSH(InternalName, fileTSH)
             if ..Type(InternalName) = "prj" {
                 set sc = $$$ADDSC(sc, ..FixProjectCspReferences(InternalName))
             }
+            write InternalName," has been imported",!
+        } else {
+	        write "ERROR importing" ,InternalName,!
+	        do $system.Status.DisplayError(sc)
         }
     } else {
-            //WRITE "skip import -- same TS",!
+	    write InternalName, " is newer than on-disk version, skipping import",!
     }
     Quit sc
 ]]></Implementation>
@@ -875,8 +913,11 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 
 <Method name="ImportRoutines">
 <ClassMethod>1</ClassMethod>
+<FormalSpec>force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	write "==import start==", !
+	
     #dim err, itemList
     
     kill err, itemList
@@ -893,7 +934,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         	//w "item ",internalName," is not in source control, skipping",!
         	continue
         }
-        #dim sc As %Status = ..LoadIfOutdated(internalName)
+        #dim sc As %Status = ..ImportItem(internalName, force)
         if $$$ISERR(sc) {
             set ec = $$$ADDSC(ec, sc)
         }
@@ -933,7 +974,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         }
     }
     
-    write "import done", !
+    write "==import done==", !
     quit ec
 ]]></Implementation>
 </Method>
@@ -985,7 +1026,7 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim type = ..Type(InternalName)
-    
+    //write "checking if we should export "_InternalName,!
     if type = "pkg" {
         $$$QuitOnError(..ExportRoutinesAux(..NameWithoutExtension(InternalName), "."))
     }elseif type = "prj" && expand {
@@ -995,10 +1036,12 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
         $$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
     }else {
         if ..IsTempFileOutdated(InternalName) {
-            write "exporting new version of  ", InternalName, !
+            write "exporting new version of ", InternalName, !
             #dim filename As %String = ..FullExternalName(InternalName)
             $$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
             $$$QuitOnError(..UpdateRoutineTSH(InternalName, $Horolog))
+        } else {
+	        write !,InternalName, " is not newer than on-disk version, skipping export"
         }
     }
     quit $$$OK
@@ -1036,11 +1079,14 @@ if temp file for InternalName not found return "0,0" in tempFileTSH</Description
 </Method>
 
 <Method name="ImportAll">
+<Description><![CDATA[
+if <var>force</var> = 1 then we import item even if timestamp in system is newer]]></Description>
 <ClassMethod>1</ClassMethod>
+<FormalSpec>force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     $$$QuitOnError(..ImportSCList())
-    quit ..ImportRoutines()
+    quit ..ImportRoutines(force)
 ]]></Implementation>
 </Method>
 

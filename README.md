@@ -56,7 +56,7 @@ Instead of your-git-server, your-git-login and your-git-password write actual va
 20. Enter repository URL.
 30. [If your TortoiseGit Version < 1.8.5] In appeared window TortoiseGit adds repository name to folder. You should delete it (Write c:\temp\git\user instead of c:\temp\git\user\reponame)
 40. Press 'OK'.
-50. Select menu Import All to load changes from temp folder to Caché.
+50. Select menu Import All to load changes from temp folder to Caché. Import All compares timestamps of files and Caché items and import files only if they are newer then Caché versions. There is also Import All Force menu item that import files without any checks.
 
 ###Work Cycle
 10. Choose menu item Pull.

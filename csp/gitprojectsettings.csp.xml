@@ -16,7 +16,7 @@
  znspace namespace
  if $Data(%request.Data("gitsettings",1)) {
      kill settings
-     for param="gitBinPath","defaultTemp","namespaceTemp" {
+     for param="gitBinPath","defaultTemp","namespaceTemp","groupByFolder" {
          set settings(param) = $Get(%request.Data(param,1))
      } 
      do ##class(%SourceControl.Git.Utils).UpdateSettings(.settings)
@@ -24,6 +24,7 @@
  set gitBinPath = ##class(%SourceControl.Git.Utils).GitBinPath()
  set defaultTemp = ##class(%SourceControl.Git.Utils).DefaultTemp()
  set namespaceTemp = ##class(%SourceControl.Git.Utils).TempFolder()
+ set groupByFolder = ##class(%SourceControl.Git.Utils).GroupByFolder()
  znspace oldNS
  set:defaultTemp="" defaultTemp =  "c:\temp\"
  
@@ -48,9 +49,16 @@ file does not found
 <tr>
 <td>Default path to temp folder<br/>(e.g. c:\temp)</td><td><input type="text" name="defaultTemp" size=40 value='#(..EscapeHTML(defaultTemp))#'/></td>
 </tr>
+<tr><th colspan="2">Settings for this namespace only</th>
+</tr>
 <tr>
 <td>Temp folder for this namespace<br/>(e.g. c:\someproj\)</td><td><input type="text" name="namespaceTemp" size=40 value='#(..EscapeHTML(namespaceTemp))#'/></td>
 </tr>
+<!--
+<tr>
+<td>Group all items by folders</td><td><input type="checkbox" name="groupByFolder" size=40 #($case(groupByFolder,1:"checked",:""))#/></td>
+</tr>
+-->
 </table>
 <input type='submit' value = 'Save!'/>
 </form>
