@@ -161,6 +161,8 @@ Returns root temp folder</Description>
     
     set @..#Storage@("settings","namespaceTemp") = ..AddSlash(settings("namespaceTemp"))
     set @..#Storage@("settings","groupByFolder") = $case(settings("groupByFolder"), "":"", :1)
+    
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -168,6 +170,7 @@ Returns root temp folder</Description>
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
 <FormalSpec>commandName:%String,itemName:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
 ..GitBinPath()_" /command:"_commandName_
                " /path:"""_..TempFolder()_
@@ -208,7 +211,6 @@ Returns root temp folder</Description>
 <FormalSpec><![CDATA[InternalName:%String,MenuName:%String,&Target:%String,&Action:%String,&Reload:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    #dim folder As %String = ..TempFolder()
     #dim menuName As %String = $Piece(MenuName,",")
     #dim menuItemName As %String = $Piece(MenuName,",",2)
     #dim ec As %Status = $$$OK
@@ -221,7 +223,6 @@ Returns root temp folder</Description>
     if (menuName = "%SourceMenu") {
         if (menuItemName = "%Cache-Git-Settings") {
             set Action = 2
-            #dim defNamespace As %String = ..#InstallNamespace
             set Target = ##class(%cspapp.gitprojectsettings).%GetParameter("CSPURL")_"?NSpace="_$znspace_"&Username="_$username
         }elseif (menuItemName = "%CreateRepo") {
             if ##class(%File).CreateDirectoryChain(..TempFolder()) {
@@ -1005,7 +1006,6 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
         
         if (type = $$$Directory) || (type = $$$CSPFolder) {
             #dim newpath As %String = $case(path,"":name,:path_isdirectory_name)
-            #dim importedcnt As %Integer = 0
             do ..ExportRoutinesAux(newpath, isdirectory, level + 1)
         } else {
             #dim InternalName As %String = path_sep_name
