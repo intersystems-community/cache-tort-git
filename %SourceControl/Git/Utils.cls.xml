@@ -32,11 +32,11 @@ Otherwise calls are synchronous and import is automatically executed after git c
 </Parameter>
 
 <Parameter name="GitMenuItems">
-<Default>,%Settings,%Commit,%Pull,%Fetch,%Switch,%Merge,%Push,%Diff,%RepoStatus,%Resolve,%Revert,%Log,</Default>
+<Default>,%Settings,%Commit,%Pull,%Fetch,%Switch,%Merge,%Push,%Diff,%RepoStatus,%Resolve,%Revert,%Log,%StashSave,%StashPop,</Default>
 </Parameter>
 
 <Parameter name="ImportAfterGitMenuItems">
-<Default>,%Clone,%Commit,%Pull,%Fetch,%Push,%Resolve,</Default>
+<Default>,%Clone,%Commit,%Pull,%Fetch,%Push,%Resolve,%StashPop,</Default>
 </Parameter>
 
 <Parameter name="GitContextMenuItems">

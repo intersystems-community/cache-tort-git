@@ -27,6 +27,9 @@
 <MenuItem Name="%Revert" Save = "001"/>
 <MenuItem Name="%Log" Save = "001"/>
 <MenuItem Separator="true"/>
+<MenuItem Name="%StashSave" Save = "001"/>
+<MenuItem Name="%StashPop" Save = "001"/>
+<MenuItem Separator="true"/>
 <MenuItem Name="%Export" Save = "001" />
 <MenuItem Name="%Import" Save = "001" />
 <MenuItem Name="%ImportForce" Save = "001" />
@@ -89,7 +92,9 @@
 			set DisplayName = "Open Repo Folder"
 		}
 		elseif ##class(Utils).IsMenuGitCommand(name) && ##class(Utils).GitBinExists() {
-			set DisplayName = $Extract(name, 2, *)
+			set DisplayName = $case(name,"%StashSave":"Stash save",
+			                             "%StashPop":"Stash pop",
+			                             :$Extract(name, 2, *))
 		} 
 		else {
 			set Enabled = -1
