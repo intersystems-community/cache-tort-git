@@ -24,13 +24,6 @@ Name of the file with version controlled items</Description>
 <Default>sc-list.txt</Default>
 </Parameter>
 
-<Parameter name="IsSYNC">
-<Description><![CDATA[
-If equals to 0 all tortoise-git calls are asynchronous<br/>
-Otherwise calls are synchronous and import is automatically executed after git calls.]]></Description>
-<Default>0</Default>
-</Parameter>
-
 <Parameter name="GitMenuItems">
 <Default>,%Settings,%Commit,%Pull,%Fetch,%Switch,%Merge,%Push,%Diff,%RepoStatus,%Resolve,%Revert,%Log,%StashSave,%StashPop,</Default>
 </Parameter>
@@ -289,16 +282,8 @@ Returns root temp folder</Description>
             set Target = ..GitCommand(command, InternalName)
         }
     }
-    if (..#IsSYNC = 1) && (Action = 3) {
-        set Action = 0
-        do $zf(-1, "set HOME="_..DefaultTemp()_"&"_Target)
-    }
     if ..IsImportAfter(menuItemName) && (Action = 3) {
-            if (..#IsSYNC = 1) {
-                set ec = ..ImportAll()
-            } else {
-                write "Choose Import All menu after work with Git!", !
-            }
+	    write "Choose Import All menu after work with Git!", !
     }
     //w Target,!
     quit ec
