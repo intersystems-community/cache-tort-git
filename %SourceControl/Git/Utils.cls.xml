@@ -858,7 +858,7 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
             if ..Type(InternalName) = "prj" {
                 set sc = $$$ADDSC(sc, ..FixProjectCspReferences(InternalName))
             }
-            write InternalName," has been imported",!
+            write InternalName," has been imported from ", filename,!
         } else {
 	        write "ERROR importing" ,InternalName,!
 	        do $system.Status.DisplayError(sc)
@@ -1026,8 +1026,9 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
         $$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
     }else {
         if ..IsTempFileOutdated(InternalName) {
-            write "exporting new version of ", InternalName, !
+            
             #dim filename As %String = ..FullExternalName(InternalName)
+            write "exporting new version of ", InternalName, " to ", filename,!
             $$$QuitOnError($system.OBJ.Export(InternalName, filename,"-d/diff"))
             $$$QuitOnError(..UpdateRoutineTSH(InternalName, $Horolog))
         } else {
