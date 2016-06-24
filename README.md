@@ -94,7 +94,7 @@ For example:
 	^Git("settings","mappings","mac")="mac/"
 	^Git("settings","namespaceTemp")="C:\temp\testctg\"
 	
-In this particular case Caché Git stores all its files (except sc-list.txt) in `src/cache` subfolder. Classes are stored in `src/cache/cls/` etc. All csp files (including static files -- js, css) are stored in `src/cache/cls`. With thtis particular path to repository classes will be stored in folder `C:\temp\testctg\src\cache\cls\`.
+In this particular case Caché Git stores all its files (except sc-list.txt) in `src/cache` subfolder. Classes are stored in `src/cache/cls/` etc. All csp files (including static files -- js, css) are stored in `src/cache/cls`. With this particular path to repository classes will be stored in folder `C:\temp\testctg\src\cache\cls\`.
 
 You can omit root mappings. Mappings for particular item type are still applied.
 
