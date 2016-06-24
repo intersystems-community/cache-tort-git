@@ -80,3 +80,22 @@ To run all tests:
     
 	%SYS>do ##class(%SourceControl.Git.Test.Git).runall()
 	
+###Extra Repository Settings
+####Mappings
+To specify particular folder in repository where Caché Git should place files set value of `^Git("settings","mappings") to relative path. Additionally you can specify subfolder for each particular item type.
+
+For example:
+
+	USER>zwrite ^Git
+	^Git("settings","mappings")="src/cache/"
+	^Git("settings","mappings","cls")="cls/"
+	^Git("settings","mappings","csp")="csp-data/"
+	^Git("settings","mappings","dfi")="dfi/"
+	^Git("settings","mappings","mac")="mac/"
+	^Git("settings","namespaceTemp")="C:\temp\testctg\"
+	
+In this particular case Caché Git stores all its files (except sc-list.txt) in `src/cache` subfolder. Classes are stored in `src/cache/cls/` etc. All csp files (including static files -- js, css) are stored in `src/cache/cls`. With thtis particular path to repository classes will be stored in folder `C:\temp\testctg\src\cache\cls\`.
+
+You can omit root mappings. Mappings for particular item type are still applied.
+
+NOTE: Caché Git does not do any automatic moving of files. If you have classes placed in root folder and change mappings for cls to "src/cache/cls" you need to move files corresponding to these classes manually. Better -- set mappings on creating of repository, before adding new items to source control.

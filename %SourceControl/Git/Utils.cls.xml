@@ -87,6 +87,14 @@ Returns root temp folder</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="MappingsNode">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[$Name(@..#Storage@("settings","mappings"))
+]]></Implementation>
+</Method>
+
 <Method name="GitBinExists">
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Boolean</ReturnType>
@@ -306,12 +314,28 @@ Returns root temp folder</Description>
 ]]></Implementation>
 </Method>
 
-<Method name="ExternalName">
+<Method name="NormalizeFolder">
+<Description><![CDATA[
+replaces any slashes with the ones for current OS<br/>
+removes first slash if present<br/>
+adds last slash if not present<br/>]]></Description>
 <ClassMethod>1</ClassMethod>
-<FormalSpec>name:%String</FormalSpec>
+<FormalSpec>folder:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    set name = $Translate(name, "/", ..#Slash)
+	set folder = $Translate(folder, "/", ..#Slash)
+	set:$Extract(folder)=..#Slash $Extract(folder) = ""
+	set:$Extract(folder,*)'=..#Slash folder = folder _ ..#Slash
+	quit folder
+]]></Implementation>
+</Method>
+
+<Method name="ExternalName">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>InternalName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    set name = $Translate(InternalName, "/", ..#Slash)
 
     // lower case for extensions
     #dim extension As %String = $ZConvert($Piece(name,".",$Length(name,".")),"L")
@@ -325,7 +349,7 @@ Returns root temp folder</Description>
 	    // If groupByFolder = 1 then we put inc, mac, int in corresponding folder, not in root.
 		// For example project.include.inc will be placed in project\include.inc.xml
         set sep = $Case(extension, "dfi" : "-", : ".")
-	    set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), sep, ..#Slash)_"." _ extension
+	    set name = $Translate($Piece(name,".", 1, $Length(name,".")-1), sep, ..#Slash)_"." _ extension
     }
         
     // we shall delete csp-app from csp files
@@ -335,8 +359,25 @@ Returns root temp folder</Description>
     if $Piece(name, ..#Slash, 1) = "csp" {
         set $Piece(name, ..#Slash, 1, 2) = "csp"
     }
-    //write "name=",name,!
-    //write "external name = ", $Translate(name," *?","___")_".xml", !
+
+    set mappings = $Data(@..MappingsNode(), rootFolder)
+    
+    if mappings#10 = 1 { // value in root
+	    set rootFolder = ..NormalizeFolder(rootFolder)
+    }
+    
+    if mappings >= 10 { //values in leaves
+   	    set type = ..Type(InternalName)
+   	    
+	    if $Data(@..MappingsNode()@(type), folder) {
+		    set folder = ..NormalizeFolder(folder)
+	    }
+    }
+    
+    set name = $Get(rootFolder) _ $Get(folder) _ name
+    
+    // write "name=",name,!
+    // write "external name = ", $Translate(name," *?","___")_".xml", !
     quit $Translate(name," *?","___")_".xml"
 ]]></Implementation>
 </Method>
@@ -445,7 +486,8 @@ Returns root temp folder</Description>
 <Description><![CDATA[
 pkg -- package<br/>
 prj -- project<br/>
-csp -- csp-page or csp-folder. See <Method>IsCspFolder</Method>]]></Description>
+csp -- csp-page or csp-folder. See <Method>IsCspFolder</Method><br/>
+csp -- any static file from csp-folder ]]></Description>
 <ClassMethod>1</ClassMethod>
 <FormalSpec>InternalName:%String</FormalSpec>
 <ReturnType>%String</ReturnType>
