@@ -390,7 +390,7 @@ adds last slash if not present<br/>]]></Description>
     #dim i As %Integer
     #dim ec As %Status = $$$OK
     for i = 1:1:$Length(InternalName, ",") {
-        #dim item As %String = ..NormalizeExtension(($Piece(InternalName, ",", i)))
+        #dim item As %String = ..NormalizeExtension($Piece(InternalName, ",", i))
         set @..#Storage@("items", item) = ""
         #dim sc As %Status =  ..ExportItem(item)
         if 'sc {
@@ -987,7 +987,7 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
                 set ec = $$$ADDSC(ec, $system.OBJ.DeleteProject(name))
             }elseif type = "cls" {
                 set ec = $$$ADDSC(ec, $system.OBJ.Delete(item))
-            }elseif $ListFind($ListBuild("mac","int","inc","bas","mvb", "mvi","dfi"), type) > 0 {
+            }elseif $ListFind($ListBuild("mac","int","inc","bas","mvb","mvi","dfi"), type) > 0 {
                 set ec = $$$ADDSC(ec, ##class(%Routine).Delete(item))
             }elseif type = "csp" {
                 #dim filename = $system.CSP.GetFileName(item)
