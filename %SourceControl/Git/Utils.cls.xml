@@ -687,7 +687,7 @@ projectName without extension</Description>
 
         #dim type As %String = ..Type(InternalName)
         if type = "cls" {
-	        #define StripExtension(%s) $Piece(%s,".",1,*-1)
+	        #define StripExtension(%s) $Piece(%s,".",1,$Length(%s, ".") - 1)
 	        if InternalName'="" && ($$$defClassKeyGet($$$StripExtension(InternalName),$$$cCLASSgeneratedby)'="") {
 		        set isInSourceControl = 0 // skip generated classes
 	        } else {
