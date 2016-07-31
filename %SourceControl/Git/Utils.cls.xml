@@ -2,7 +2,7 @@
 <Export generator="Cache" version="25">
 <Class name="%SourceControl.Git.Utils">
 <Abstract>1</Abstract>
-<IncludeCode>%occStatus</IncludeCode>
+<IncludeCode>%occStatus,%occErrors</IncludeCode>
 <ProcedureBlock>1</ProcedureBlock>
 <TimeCreated>62657,53384.637236</TimeCreated>
 
@@ -1002,7 +1002,12 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
                 do ..RemoveRoutineTSH(item)
                 write item, " was deleted", !
             } else {
-                write "Error: could not delete ", item, !
+	            if +$system.Status.GetErrorCodes(ec) '= $$$ClassDoesNotExist {
+                	write "Error: could not delete ", item, !
+	            } else {
+		            // if something we wanted to delete is already deleted -- good!
+		            set ec = $$$OK
+	            }
             }
         }
     }
