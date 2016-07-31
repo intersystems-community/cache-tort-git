@@ -906,7 +906,7 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
 	        do $system.Status.DisplayError(sc)
         }
     } else {
-	    write InternalName, " is newer than on-disk version, skipping import",!
+	    write InternalName, " is the same as on-disk version or newer, skipping import",!
     }
     Quit sc
 ]]></Implementation>
