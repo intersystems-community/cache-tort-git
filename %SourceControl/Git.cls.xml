@@ -31,6 +31,7 @@
 <MenuItem Name="%StashPop" Save = "001"/>
 <MenuItem Separator="true"/>
 <MenuItem Name="%Export" Save = "001" />
+<MenuItem Name="%ExportForce" Save = "001" />
 <MenuItem Name="%Import" Save = "001" />
 <MenuItem Name="%ImportForce" Save = "001" />
 <MenuItem Separator="true"/>
@@ -82,6 +83,8 @@
 	if ##class(Utils).IsNamespaceInGit() {
 		if name = "%Export" {
 			set DisplayName = "Export All"
+		} elseif name="%ExportForce" {
+			set DisplayName = "Export All Force"
 		} elseif name = "%Import" {
 			set DisplayName = "Import All"
 		} elseif name = "%ImportForce" {

@@ -212,6 +212,7 @@ Returns root temp folder</Description>
 <FormalSpec><![CDATA[InternalName:%String,MenuName:%String,&Target:%String,&Action:%String,&Reload:%Boolean]]></FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	#define Force 1
     #dim menuName As %String = $Piece(MenuName,",")
     #dim menuItemName As %String = $Piece(MenuName,",",2)
     #dim ec As %Status = $$$OK
@@ -235,9 +236,9 @@ Returns root temp folder</Description>
             } else {
                 set ec = ..MakeError("Unable to create folder "_..TempFolder())
             }
-        }elseif (menuItemName = "%Export") {
+        }elseif (menuItemName = "%Export") || (menuItemName = "%ExportForce") {
             write "==export start==",!
-            set ec = ..ExportAll()
+            set ec = ..ExportAll($case(menuItemName="%ExportForce",1:$$$Force,:0))
             if ec {
                 write !,"==export done==",!
             }
@@ -245,7 +246,6 @@ Returns root temp folder</Description>
             set ec = ..ImportAll()
             set Reload = 1
         }elseif (menuItemName = "%ImportForce") {
-	        #define Force 1
             set ec = ..ImportAll($$$Force)
             set Reload = 1
         }elseif (menuItemName = "%Clone") {
@@ -1019,7 +1019,7 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
 
 <Method name="ExportRoutinesAux">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>path:%String,sep:%String="",level:%Integer=0</FormalSpec>
+<FormalSpec>path:%String,sep:%String="",level:%Integer=0,force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #define Dir
@@ -1043,13 +1043,13 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
         
         if (type = $$$Directory) || (type = $$$CSPFolder) {
             #dim newpath As %String = $case(path,"":name,:path_isdirectory_name)
-            do ..ExportRoutinesAux(newpath, isdirectory, level + 1)
+            do ..ExportRoutinesAux(newpath, isdirectory, level + 1, force)
         } else {
             #dim InternalName As %String = path_sep_name
             if (type = $$$CspFile) && ($Extract(InternalName) '= "/") {
                 set InternalName = "/"_InternalName
             }
-            set ec = ..ExportItem(InternalName)
+            set ec = ..ExportItem(InternalName, 1, force)
         }
     }
     kill rs
@@ -1059,20 +1059,20 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
 
 <Method name="ExportItem">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>InternalName:%String,expand:%Boolean=1</FormalSpec>
+<FormalSpec>InternalName:%String,expand:%Boolean=1,force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim type = ..Type(InternalName)
     //write "checking if we should export "_InternalName,!
     if type = "pkg" {
-        $$$QuitOnError(..ExportRoutinesAux(..NameWithoutExtension(InternalName), "."))
+        $$$QuitOnError(..ExportRoutinesAux(..NameWithoutExtension(InternalName), ".", 0, force))
     }elseif type = "prj" && expand {
-        $$$QuitOnError(..ExportProject(..NameWithoutExtension(InternalName)))
-        $$$QuitOnError(..ExportItem(InternalName, 0))
+        $$$QuitOnError(..ExportProject(..NameWithoutExtension(InternalName), force))
+        $$$QuitOnError(..ExportItem(InternalName, 0, force))
     }elseif (type = "csp") && ..IsCspFolder(InternalName) {
-        $$$QuitOnError(..ExportRoutinesAux(InternalName , "/"))
+        $$$QuitOnError(..ExportRoutinesAux(InternalName , "/", 0, force))
     }else {
-        if ..IsTempFileOutdated(InternalName) {
+        if ..IsTempFileOutdated(InternalName) || force {
             
             #dim filename As %String = ..FullExternalName(InternalName)
             write "exporting new version of ", InternalName, " to ", filename,!
@@ -1088,7 +1088,7 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
 
 <Method name="ExportProject">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>project:%String</FormalSpec>
+<FormalSpec>project:%String,force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim rs As %ResultSet = ##class(%ResultSet).%New("%Studio.Project:ProjectItemsList")
@@ -1099,7 +1099,7 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
         if $ListFind(typesWithoutExtension, rs.Get("Type")) {
             set name = name _ "." _ rs.Get("Type")
         }
-        #dim ec As %Status = ..ExportItem(name)
+        #dim ec As %Status = ..ExportItem(name, 1, force)
         quit:'ec
     }
     kill rs
@@ -1108,10 +1108,13 @@ if <var>force</var> = 1 then imports in any case.]]></Description>
 </Method>
 
 <Method name="ExportAll">
+<Description><![CDATA[
+if <var>force</var> = 1 then we export item even if timestamp in system is older]]></Description>
 <ClassMethod>1</ClassMethod>
+<FormalSpec>force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    $$$QuitOnError(..ExportRoutines())
+    $$$QuitOnError(..ExportRoutines(force))
     quit ..ExportSCList()
 ]]></Implementation>
 </Method>
@@ -1130,6 +1133,7 @@ if <var>force</var> = 1 then we import item even if timestamp in system is newer
 
 <Method name="ExportRoutines">
 <ClassMethod>1</ClassMethod>
+<FormalSpec>force:%Boolean=0</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim item As %String = ""
@@ -1137,7 +1141,7 @@ if <var>force</var> = 1 then we import item even if timestamp in system is newer
     for  {
         set item = $Order(@..#Storage@("items",item))
         quit:item=""
-        set ec = ..ExportItem(item)
+        set ec = ..ExportItem(item, 1, force)
         quit:'ec       
     }
     quit ec
