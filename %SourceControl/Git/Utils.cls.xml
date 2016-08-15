@@ -652,7 +652,11 @@ projectName without extension</Description>
     for  {
         set cspFolder = $Order(@..#Storage@("items", cspFolder))
         quit:cspFolder=""
-        continue:'(..Type(cspFolder)="csp" && ..IsCspFolder(cspFolder))
+        //no need to check IsCspFolder. It might not exist yet
+        //continue:'(..Type(cspFolder)="csp" && ..IsCspFolder(cspFolder))
+        continue:'(..Type(cspFolder)="csp")
+
+
         
         if ..IsItemInCSPFolder(InternalName, cspFolder) {
             set found = 1
