@@ -38,8 +38,8 @@ Instead of your-git-server, your-git-login and your-git-password write actual va
 2. Chose menu Create Repo. Press OK. One more time.
 3. Now menu has full view.
 4. A new menu item appears in context menu — "Git -> Add to Source Control".
-5. Chose elements you want to add to Git. These programs, classes, csp-pages etc. are exported to hdd-folder and automatically synchronized with it every time when you open or save them in Studio.
-6. Chose menu Commit.
+5. Choose elements you want to add to Git. These programs, classes, csp-pages etc. are exported to hdd-folder and automatically synchronized with it every time when you open or save them in Studio.
+6. Choose menu Commit.
 7. Select all files, right-click on them and choose "Add".
 8. Write comment and press "Commit"
 9. Now you can immediately push changes to server
@@ -97,5 +97,14 @@ For example:
 In this particular case Caché Git stores all its files (except sc-list.txt) in `src/cache/` subfolder. Classes are stored in `src/cache/cls/` etc. All csp files (including static files -- js, css) are stored in `src/cache/csp-data/`. With this particular path to repository classes will be stored in folder `C:\temp\testctg\src\cache\cls\`.
 
 You can omit root mappings. Mappings for particular item type are still applied.
+
+#### Other Settings
+The following sub-nodes of `^Git("settings")` allow for further configuration:
+* `"groupByFolder"` - boolean value that defaults to `0`. The setting applies to all INC, MAC and INT routines as well as DFI exports.
+  * When this value is true, use nested folders for these files e.g. `Package.Include.INC` would be exported to `<rootfolder>/Package/Include.inc.xml`
+  * When this value is false, all these files are exported to the root folder.
+* `"includeExtensionInFilename"` - boolean value that defaults to `1`.
+  * When true, exported files include the lowercase extension in the filename, e.g. `MyClass.cls.xml`
+  * When false, exported files do not include the extension in the filename, e.g. `MyClass.xml`
 
 NOTE: Caché Git does not do any automatic moving of files. If you have classes placed in root folder and change mappings for cls to "src/cache/cls/" you need to move files corresponding to these classes manually. Better -- set mappings on creating of repository, before adding new items to source control.
