@@ -100,10 +100,11 @@ You can omit root mappings. Mappings for particular item type are still applied.
 
 #### Other Settings
 The following sub-nodes of `^Git("settings")` allow for further configuration:
-* `"groupByFolder"` - boolean value that defaults to `0`. The setting applies to all INC, MAC and INT routines as well as DFI exports.
-  * When this value is true, use nested folders for these files e.g. `Package.Include.INC` would be exported to `<rootfolder>/Package/Include.inc.xml`
-  * When this value is false, all these files are exported to the root folder.
-* `"includeExtensionInFilename"` - boolean value that defaults to `1`.
+
+* `"groupByFolder"` - boolean value that defaults to `0` when not specified. The setting applies to all INC, MAC and INT routines as well as DFI exports.
+  * When this value is true, use nested folders for these files, e.g. `Package.Include.INC` would be exported to `<rootfolder>/Package/Include.inc.xml`
+  * When this value is false, all these files are exported to the root folder, e.g. `Package.Include.INC` would be exported to `<rootfolder>/Package.Include.inc.xml`
+* `"includeExtensionInFilename"` - boolean value that defaults to `1` when not specified.
   * When true, exported files include the lowercase extension in the filename, e.g. `MyClass.cls.xml`
   * When false, exported files do not include the extension in the filename, e.g. `MyClass.xml`
 
