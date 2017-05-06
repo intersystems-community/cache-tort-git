@@ -359,7 +359,7 @@ adds last slash if not present<br/>]]></Description>
 
     // we shall put classes in different folders
     if extension = "cls" {
-		set name = $Translate( baseName, ".", ..#Slash) _ extensionSuffix
+        set name = $Translate( baseName, ".", ..#Slash) _ extensionSuffix
     } elseif groupByFolder {
 	    // If groupByFolder = 1 then we put inc, mac, int in corresponding folder, not in root.
 		// For example project.include.inc will be placed in project\include.inc.xml
