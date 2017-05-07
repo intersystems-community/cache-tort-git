@@ -87,6 +87,14 @@ Returns root temp folder</Description>
 ]]></Implementation>
 </Method>
 
+<Method name="IncludeExtensionInFilename">
+<ClassMethod>1</ClassMethod>
+<CodeMode>expression</CodeMode>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[$Get(@..#Storage@("settings","includeExtensionInFilename"), 1)
+]]></Implementation>
+</Method>
+
 <Method name="MappingsNode">
 <ClassMethod>1</ClassMethod>
 <CodeMode>expression</CodeMode>
@@ -339,19 +347,29 @@ adds last slash if not present<br/>]]></Description>
 
     // lower case for extensions
     #dim extension As %String = $ZConvert($Piece(name,".",$Length(name,".")),"L")
-    set $Piece(name,".",$Length(name,".")) = extension
+    #dim baseName As %String = $piece(name,".",1,$length(name,".")-1)
     
-	#dim groupByFolder As %Boolean = ..GroupByFolder()
+    #dim groupByFolder As %Boolean = ..GroupByFolder()
+    if ..IncludeExtensionInFilename() {
+        set extensionSuffix = "." _ extension
+    }
+    else {
+        set extensionSuffix = ""
+    }
+
     // we shall put classes in different folders
     if extension = "cls" {
-       	set name = $Translate( $Piece(name,".", 1, $Length(name,".")-1), ".", ..#Slash)_".cls"
+        set name = $Translate( baseName, ".", ..#Slash) _ extensionSuffix
     } elseif groupByFolder {
 	    // If groupByFolder = 1 then we put inc, mac, int in corresponding folder, not in root.
 		// For example project.include.inc will be placed in project\include.inc.xml
         set sep = $Case(extension, "dfi" : "-", : ".")
-	    set name = $Translate($Piece(name,".", 1, $Length(name,".")-1), sep, ..#Slash)_"." _ extension
+	    set name = $Translate(baseName, sep, ..#Slash) _ extensionSuffix
     }
-        
+    else {
+        set name = baseName _ extensionSuffix
+    }
+    
     // we shall delete csp-app from csp files
     if $Extract(name, 1) = ..#Slash {
         set $Extract(name, 1) = ""
@@ -360,7 +378,8 @@ adds last slash if not present<br/>]]></Description>
         set $Piece(name, ..#Slash, 1, 2) = "csp"
     }
 
-    set mappings = $Data(@..MappingsNode(), rootFolder)
+    set mappingsNode = ..MappingsNode()
+    set mappings = $Data(@mappingsNode, rootFolder)
     
     if mappings#10 = 1 { // value in root
 	    set rootFolder = ..NormalizeFolder(rootFolder)
@@ -369,7 +388,7 @@ adds last slash if not present<br/>]]></Description>
     if mappings >= 10 { //values in leaves
    	    set type = ..Type(InternalName)
    	    
-	    if $Data(@..MappingsNode()@(type), folder) {
+	    if $Data(@mappingsNode@(type), folder) {
 		    set folder = ..NormalizeFolder(folder)
 	    }
     }
