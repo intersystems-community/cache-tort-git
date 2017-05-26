@@ -462,25 +462,29 @@ adds last slash if not present<br/>]]></Description>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     #dim sc As %Status = $$$OK
-    
-    if $Data(@..#Storage@("items", ..NormalizeExtension(InternalName))) {
-	    set InternalName = ..NormalizeExtension(InternalName)
+    for i = 1:1:$Length(InternalName, ",") {
+	    #dim tsc As %Status = $$$OK
+	    set item = $Piece(InternalName, ",", i)
+	    if $Data(@..#Storage@("items", ..NormalizeExtension(item))) {
+		    set item = ..NormalizeExtension(item)
+	    }
+	    
+	    if $Data(@..#Storage@("items", item)) {
+	        kill @..#Storage@("items", item)
+	        set tsc = ..DeleteExternalsForItem(item)
+	        do ..RemoveFolderIfEmpty(..TempFolder())
+	        set tsc = $$$ADDSC(tsc, ..ExportSCList())
+	    } else {
+	        #dim parentElement As %String = ""
+	        if ..IsInSourceControl(item, .parentElement) {
+	            set tsc = ..MakeError(item _ " is contained in "_parentElement_" that tracked by SourceControl")
+	        }else {
+	            set tsc = ..MakeError(item _ " is not in SourceControl")
+	        }
+	    }
+	    set sc = $$$ADDSC(tsc, sc)
     }
-    
-    if $Data(@..#Storage@("items", InternalName)) {
-        kill @..#Storage@("items", InternalName)
-        set sc = ..DeleteExternalsForItem(InternalName)
-        do ..RemoveFolderIfEmpty(..TempFolder())
-        set sc = $$$ADDSC(sc, ..ExportSCList())
-    } else {
-        #dim parentElement As %String = ""
-        if ..IsInSourceControl(InternalName, .parentElement) {
-            set sc = ..MakeError("This element is contained in "_parentElement_" that tracked by SourceControl")
-        }else {
-            set sc = ..MakeError("Element is not in SourceControl")
-        }
-        
-    }
+    zwrite sc
     quit sc
 ]]></Implementation>
 </Method>

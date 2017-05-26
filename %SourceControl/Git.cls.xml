@@ -126,6 +126,9 @@
 	
 	if (itemName = "") || '##class(Utils).IsNamespaceInGit() {
 		set Enabled = -1
+	}elseif $F(itemName,",") > 0 { //if more than one item is selected, we can only add/remove, no diff or blame
+		set Enabled = $case(menuItemName,"%AddToSC":1,"%RemoveFromSC":1,:-1)
+	
 	}elseif ##class(Utils).IsInSourceControl(##class(Utils).NormalizeInternalName(itemName)) {
 		set Enabled = $Case(menuItemName, "%AddToSC":-1,:1)
 	} else {
