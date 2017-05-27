@@ -484,7 +484,7 @@ adds last slash if not present<br/>]]></Description>
 	    }
 	    set sc = $$$ADDSC(tsc, sc)
     }
-    zwrite sc
+
     quit sc
 ]]></Implementation>
 </Method>
