@@ -14,12 +14,12 @@ Caché Studio before 2011.1 cannot work with executables that have space in its 
 _On *Nix systems Caché Git provides only Export/Import without calling TortoiseGit._
 
 ## Installation in Caché:
-1. Enable [write-access](http://docs.intersystems.com/ens20151/csp/docbook/DocBook.UI.Page.cls?KEY=GSA_config#GSA_config_database_edit) to %CACHELIB database via the Management Portal. (This is required for csp-page with settings import.)
+1. Enable [write-access](http://docs.intersystems.com/ens20151/csp/docbook/DocBook.UI.Page.cls?KEY=GSA_config#GSA_config_database_edit) to CACHELIB database via the Management Portal. (This is required for csp-page with settings import.)
 1. Import project in %SYS:
 
     %SYS>do $system.OBJ.ImportDir("c:\your-path-that-contains-project-downloaded-from-github","*.xml","ck",,1)
 
-1. Now you can disable write-access to %CACHELIB.
+1. Now you can disable write-access to CACHELIB.
 1. In Management Portal select the new %SourceControl.Git class as the desired Source Control class in all namespaces where you wish to use it. (System Administration >> Configuration >> Additional Settings >> Source Control)
 
 ## Setup
